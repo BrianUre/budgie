@@ -1,0 +1,46 @@
+{
+  "name": "budgie",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^5.0.0",
+    "@prisma/client": "^5.19.0",
+    "@tanstack/react-table": "^8.20.0",
+    "@trpc/client": "^11.0.0-rc.600",
+    "@trpc/next": "^11.0.0-rc.600",
+    "@trpc/react-query": "^11.0.0-rc.600",
+    "@trpc/server": "^11.0.0-rc.600",
+    "@tanstack/react-query": "^5.56.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "zod": "^3.23.0",
+    "superjson": "^2.2.1",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.0",
+    "lucide-react": "^0.427.0",
+    "superjson": "^2.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.40",
+    "prisma": "^5.19.0",
+    "tailwindcss": "^3.4.7",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id
+  email     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles         Role[]
+  contributions Contribution[]
+  payments      Payment[]
+  notes         Note[] @relation("NoteCreator")
+
+  @@map("users")
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles    Role[]
+  months   Month[]
+  expenses Expense[]
+
+  @@map("accounts")
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  accountId String
+  userId    String
+  role      Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, userId])
+  @@map("roles")
+}
+
+model Month {
+  id        String   @id @default(uuid())
+  accountId String
+  year      Int
+  month     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  costs   Cost[]
+  notes   Note[]
+
+  @@unique([accountId, year, month])
+  @@map("months")
+}
+
+model Expense {
+  id        String   @id @default(uuid())
+  accountId String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  costs   Cost[]
+
+  @@map("expenses")
+}
+
+model Cost {
+  id        String   @id @default(uuid())
+  monthId   String
+  expenseId String
+  amount    Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  month      Month         @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  expense    Expense       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  contributions Contribution[]
+
+  @@unique([monthId, expenseId])
+  @@map("costs")
+}
+
+model Contribution {
+  id        String   @id @default(uuid())
+  costId    String
+  userId    String
+  percentage Decimal @db.Decimal(5, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cost     Cost     @relation(fields: [costId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@map("contributions")
+}
+
+model Destination {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments Payment[]
+
+  @@map("destinations")
+}
+
+model Payment {
+  id             String   @id @default(uuid())
+  destinationId  String
+  contributionId String
+  userId         String
+  status         Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  destination  Destination  @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  contribution Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Note {
+  id         String   @id @default(uuid())
+  monthId    String
+  createdById String
+  content    String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  month      Month @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  createdBy  User  @relation("NoteCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
