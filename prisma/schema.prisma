@@ -16,7 +16,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  roles         Role[]
+  admins        Admin[]
   contributions Contribution[]
   payments      Payment[]
   notes         Note[] @relation("NoteCreator")
@@ -30,7 +30,7 @@ model Budgie {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  roles        Role[]
+  admins       Admin[]
   months       Month[]
   expenses     Expense[]
   contributors Contributor[]
@@ -38,11 +38,10 @@ model Budgie {
   @@map("budgies")
 }
 
-model Role {
+model Admin {
   id        String   @id @default(uuid())
   budgieId  String
   userId    String
-  role      Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -50,7 +49,7 @@ model Role {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([budgieId, userId])
-  @@map("roles")
+  @@map("admins")
 }
 
 model Month {
