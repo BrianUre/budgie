@@ -1,8 +1,20 @@
 import { createTRPCRouter } from "@/server/api/trpc";
+import { adminRouter } from "@/server/api/routers/admin";
+import { budgieRouter } from "@/server/api/routers/budgie";
+import { contributionRouter } from "@/server/api/routers/contribution";
+import { contributorRouter } from "@/server/api/routers/contributor";
+import { costRouter } from "@/server/api/routers/cost";
+import { expenseRouter } from "@/server/api/routers/expense";
+import { monthRouter } from "@/server/api/routers/month";
 
 export const appRouter = createTRPCRouter({
-  // Add your routers here
-  // example: exampleRouter,
+  budgie: budgieRouter,
+  month: monthRouter,
+  expense: expenseRouter,
+  cost: costRouter,
+  contributor: contributorRouter,
+  admin: adminRouter,
+  contribution: contributionRouter,
 });
 
 export type AppRouter = typeof appRouter;

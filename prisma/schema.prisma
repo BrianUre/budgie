@@ -124,6 +124,8 @@ model Contribution {
   contributor Contributor? @relation(fields: [contributorId], references: [id], onDelete: Cascade)
   payments    Payment[]
 
+  @@unique([costId, userId])
+  @@unique([costId, contributorId])
   @@map("contributions")
 }
 

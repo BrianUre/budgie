@@ -1,16 +1,19 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { type CreateNextContextOptions } from "@trpc/server/adapters/fetch";
+import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { getAuth } from "@clerk/nextjs/server";
 import { db } from "@/server/db";
+import { createServices } from "@/server/services";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-export const createTRPCContext = async (opts: CreateNextContextOptions) => {
-  const auth = await getAuth(opts.req);
+export const createTRPCContext = async (opts: FetchCreateContextFnOptions) => {
+  const auth = await getAuth(opts.req as Parameters<typeof getAuth>[0]);
+  const services = createServices(db);
 
   return {
     db,
     auth,
+    services,
   };
 };
 
