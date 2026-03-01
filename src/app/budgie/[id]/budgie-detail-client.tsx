@@ -34,7 +34,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Pencil } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
+import { ExpenseCostRow } from "@/components/expense-cost-row";
 
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -326,37 +327,24 @@ export function BudgieDetailClient() {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {expenses.map((e) => {
-                  const cost = costByExpense.get(e.id);
-                  const amount = cost ? Number(cost.amount) : null;
-                  return (
-                    <li
-                      key={e.id}
-                      className="flex items-center justify-between rounded border p-2"
-                    >
-                      <span>{e.name}</span>
-                      {effectiveMonthId && amount !== null && (
-                        <span className="font-mono">
-                          {isAdmin ? (
-                            <CostEdit
-                              costId={cost!.id}
-                              value={amount}
-                              onSave={(v) =>
-                                costMutation.mutateAsync({
-                                  costId: cost!.id,
-                                  amount: v,
-                                })
-                              }
-                              isPending={costMutation.isPending}
-                            />
-                          ) : (
-                            formatMoney(amount)
-                          )}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
+                {expenses
+                  .filter((e) => costByExpense.has(e.id))
+                  .map((e) => {
+                    const cost = costByExpense.get(e.id)!;
+                    return (
+                      <ExpenseCostRow
+                        key={e.id}
+                        expense={e}
+                        cost={cost}
+                        effectiveMonthId={effectiveMonthId}
+                        isAdmin={isAdmin}
+                        onSaveCost={(costId, amount) =>
+                          costMutation.mutateAsync({ costId, amount })
+                        }
+                        isCostPending={costMutation.isPending}
+                      />
+                    );
+                  })}
                 {expenses.length === 0 && (
                   <li className="text-muted-foreground text-sm">
                     No expenses yet. Add one to get started.
@@ -489,68 +477,6 @@ function formatMoney(n: number) {
     style: "currency",
     currency: "USD",
   }).format(n);
-}
-
-function CostEdit({
-  costId,
-  value,
-  onSave,
-  isPending,
-}: {
-  costId: string;
-  value: number;
-  onSave: (v: number) => Promise<unknown>;
-  isPending: boolean;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(String(value));
-
-  const handleSave = async () => {
-    const v = parseFloat(draft);
-    if (!Number.isNaN(v) && v >= 0) {
-      await onSave(v);
-      setEditing(false);
-    }
-  };
-
-  if (editing) {
-    return (
-      <span className="flex items-center gap-1">
-        <Input
-          type="number"
-          min={0}
-          step={0.01}
-          className="h-8 w-24"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={handleSave}
-          onKeyDown={(e) => e.key === "Enter" && void handleSave()}
-        />
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-8 w-8"
-          onClick={() => void handleSave()}
-          disabled={isPending}
-        >
-          <Pencil className="h-3 w-3" />
-        </Button>
-      </span>
-    );
-  }
-  return (
-    <button
-      type="button"
-      className="flex items-center gap-1 hover:underline"
-      onClick={() => {
-        setDraft(String(value));
-        setEditing(true);
-      }}
-    >
-      {formatMoney(value)}
-      <Pencil className="h-3 w-3 opacity-70" />
-    </button>
-  );
 }
 
 function ContributionGrid({
