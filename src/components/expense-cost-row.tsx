@@ -95,7 +95,7 @@ export function ExpenseCostRow({
     <li className="flex items-center justify-between rounded border p-2">
       <span>{expense.name}</span>
       {effectiveMonthId && (
-        <span className="font-mono b-dev">
+        <span className="font-mono">
           {isAdmin ? (
             <CostEdit
               costId={cost.id}
