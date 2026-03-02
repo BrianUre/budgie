@@ -44,3 +44,11 @@ export class CostService {
     });
   }
 }
+
+export type Cost = Awaited<
+  ReturnType<CostService["getById"]>
+>;
+
+export type Costs = Awaited<
+  ReturnType<CostService["listForMonth"]>
+>;

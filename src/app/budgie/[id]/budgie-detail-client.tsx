@@ -31,8 +31,18 @@ import { ContributionGrid } from "@/components/contribution-grid";
 import { ExpenseCostRow } from "@/components/expense-cost-row";
 
 const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 function formatMonth(year: number, month: number) {
@@ -50,7 +60,11 @@ export function BudgieDetailClient() {
   }
 
   const utils = api.useUtils();
-  const { data: budgie, isLoading: budgieLoading, error: budgieError } = api.budgie.getById.useQuery(
+  const {
+    data: budgie,
+    isLoading: budgieLoading,
+    error: budgieError,
+  } = api.budgie.getById.useQuery(
     { id },
     { enabled: !!id && isLoaded && !!isSignedIn }
   );
@@ -59,20 +73,27 @@ export function BudgieDetailClient() {
     { enabled: !!id && !!budgie }
   );
 
-  const now = useMemo(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() + 1 }), []);
+  const now = useMemo(
+    () => ({
+      year: new Date().getFullYear(),
+      month: new Date().getMonth() + 1,
+    }),
+    []
+  );
   const currentMonthRow = useMemo(
     () => months.find((m) => m.year === now.year && m.month === now.month),
     [months, now]
   );
   const [selectedMonthId, setSelectedMonthId] = useState<string | null>(null);
-  const effectiveMonthId = selectedMonthId ?? currentMonthRow?.id ?? months[0]?.id ?? null;
+  const effectiveMonthId =
+    selectedMonthId ?? currentMonthRow?.id ?? months[0]?.id ?? null;
 
   const { data: expenses = [] } = api.expense.list.useQuery(
     { budgieId: id },
     { enabled: !!id && !!budgie }
   );
   const { data: costs = [] } = api.cost.listForMonth.useQuery(
-    { monthId: effectiveMonthId! },
+    { monthId: effectiveMonthId!, budgieId: id },
     { enabled: !!effectiveMonthId }
   );
   const { data: admins = [] } = api.admin.listForBudgie.useQuery(
@@ -83,10 +104,11 @@ export function BudgieDetailClient() {
     { budgieId: id },
     { enabled: !!id && !!budgie }
   );
-  const { data: contributionsForMonth = [] } = api.contribution.listForMonth.useQuery(
-    { monthId: effectiveMonthId! },
-    { enabled: !!effectiveMonthId }
-  );
+  const { data: contributionsForMonth = [] } =
+    api.contribution.listForMonth.useQuery(
+      { monthId: effectiveMonthId! },
+      { enabled: !!effectiveMonthId }
+    );
   const { data: isAdmin = false } = api.admin.isAdmin.useQuery(
     { budgieId: id },
     { enabled: !!id && !!budgie }
@@ -103,17 +125,11 @@ export function BudgieDetailClient() {
       void utils.cost.listForMonth.invalidate({ monthId: effectiveMonthId! });
     },
   });
-  const contributorMutation = api.contributor.create.useMutation({
+  const contributorMutation = api.contributor.add.useMutation({
     onSuccess: () => {
       void utils.contributor.list.invalidate({ budgieId: id });
     },
   });
-  const contributionMutation = api.contribution.setPercentages.useMutation({
-    onSuccess: () => {
-      void utils.contribution.listForMonth.invalidate({ monthId: effectiveMonthId! });
-    },
-  });
-
   const selectedMonth = useMemo(
     () => months.find((m) => m.id === effectiveMonthId),
     [months, effectiveMonthId]
@@ -130,7 +146,8 @@ export function BudgieDetailClient() {
   }, [contributionsForMonth]);
 
   const contributorRows = useMemo(() => {
-    const list: { id: string; label: string; type: "user" | "contributor" }[] = [];
+    const list: { id: string; label: string; type: "user" | "contributor" }[] =
+      [];
     for (const a of admins) {
       list.push({ id: a.user.id, label: a.user.email, type: "user" });
     }
@@ -159,7 +176,9 @@ export function BudgieDetailClient() {
       for (const cost of costs) {
         const contribs = contributionsByCost.get(cost.id) ?? [];
         const c = contribs.find(
-          (x) => (row.type === "user" && x.userId === row.id) || (row.type === "contributor" && x.contributorId === row.id)
+          (x) =>
+            (row.type === "user" && x.userId === row.id) ||
+            (row.type === "contributor" && x.contributorId === row.id)
         );
         if (c) total += Number(cost.amount) * (Number(c.percentage) / 100);
       }
@@ -230,7 +249,9 @@ export function BudgieDetailClient() {
         <Card>
           <CardHeader>
             <CardTitle>Month</CardTitle>
-            <CardDescription>Select the month to view and edit.</CardDescription>
+            <CardDescription>
+              Select the month to view and edit.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             {months.map((m) => (
@@ -251,7 +272,9 @@ export function BudgieDetailClient() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Expenses</CardTitle>
-                <CardDescription>Costs are per month; add an expense to track it.</CardDescription>
+                <CardDescription>
+                  Costs are per month; add an expense to track it.
+                </CardDescription>
               </div>
               {isAdmin && (
                 <Dialog>
@@ -282,7 +305,9 @@ export function BudgieDetailClient() {
                               <Label>Name</Label>
                               <Input
                                 value={field.state.value}
-                                onChange={(e) => field.handleChange(e.target.value)}
+                                onChange={(e) =>
+                                  field.handleChange(e.target.value)
+                                }
                                 placeholder="e.g. Rent"
                               />
                             </div>
@@ -298,7 +323,9 @@ export function BudgieDetailClient() {
                                 step={0.01}
                                 value={field.state.value || ""}
                                 onChange={(e) =>
-                                  field.handleChange(parseFloat(e.target.value) || 0)
+                                  field.handleChange(
+                                    parseFloat(e.target.value) || 0
+                                  )
                                 }
                               />
                             </div>
@@ -332,7 +359,11 @@ export function BudgieDetailClient() {
                         effectiveMonthId={effectiveMonthId}
                         isAdmin={isAdmin}
                         onSaveCost={(costId, amount) =>
-                          costMutation.mutateAsync({ costId, amount })
+                          costMutation.mutateAsync({
+                            budgieId: id,
+                            costId,
+                            amount,
+                          })
                         }
                         isCostPending={costMutation.isPending}
                       />
@@ -352,7 +383,8 @@ export function BudgieDetailClient() {
               <div>
                 <CardTitle>Contributors</CardTitle>
                 <CardDescription>
-                  People and entities that share costs. Percentages are set per cost below.
+                  People and entities that share costs. Percentages are set per
+                  cost below.
                 </CardDescription>
               </div>
               {isAdmin && (
@@ -374,7 +406,8 @@ export function BudgieDetailClient() {
                       <DialogHeader>
                         <DialogTitle>Add contributor</DialogTitle>
                         <DialogDescription>
-                          Add an entity (e.g. landlord) that contributes income or shares costs.
+                          Add an entity (e.g. landlord) that contributes income
+                          or shares costs.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
@@ -384,7 +417,9 @@ export function BudgieDetailClient() {
                               <Label>Name</Label>
                               <Input
                                 value={field.state.value}
-                                onChange={(e) => field.handleChange(e.target.value)}
+                                onChange={(e) =>
+                                  field.handleChange(e.target.value)
+                                }
                                 placeholder="e.g. Landlord"
                               />
                             </div>
@@ -410,31 +445,30 @@ export function BudgieDetailClient() {
                   <li key={r.id}>{r.label}</li>
                 ))}
                 {contributorRows.length === 0 && (
-                  <li className="text-muted-foreground">No contributors yet.</li>
+                  <li className="text-muted-foreground">
+                    No contributors yet.
+                  </li>
                 )}
               </ul>
             </CardContent>
           </Card>
         </div>
 
-        {costs.length > 0 && contributorRows.length > 0 && (
-          <Card>
+        {`${contributorsList}`}
+        {contributorsList.length > 0 && (
+          <Card className="b-dev">
             <CardHeader>
               <CardTitle>Contribution split</CardTitle>
               <CardDescription>
-                Percentages per cost must sum to 100%. Change one and others rebalance.
+                Set each contributor&apos;s share per cost (percentages sum to
+                100%).
               </CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <ContributionGrid
-                costs={costs}
-                contributorRows={contributorRows}
-                contributionsByCost={contributionsByCost}
-                isAdmin={isAdmin}
-                onSetPercentages={(costId, contributions) =>
-                  contributionMutation.mutateAsync({ costId, contributions })
-                }
-                isPending={contributionMutation.isPending}
+                contributors={contributorsList}
+                contributions={contributionsForMonth}
+                budgieId={id}
               />
             </CardContent>
           </Card>
@@ -444,7 +478,8 @@ export function BudgieDetailClient() {
           <CardHeader>
             <CardTitle>Totals</CardTitle>
             <CardDescription>
-              Total costs and each contributor&apos;s share for the selected month.
+              Total costs and each contributor&apos;s share for the selected
+              month.
             </CardDescription>
           </CardHeader>
           <CardContent>

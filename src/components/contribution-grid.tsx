@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+import { api } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -9,69 +11,73 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { Contributors } from "@/server/services/contributor.service";
+import type { ContributionsForMonth } from "@/server/services/contribution.service";
 
 export function ContributionGrid({
-  costs,
-  contributorRows,
-  contributionsByCost,
-  isAdmin,
-  onSetPercentages,
-  isPending,
+  contributors,
+  contributions,
+  budgieId,
 }: {
-  costs: { id: string; expenseId: string; expense: { name: string } }[];
-  contributorRows: { id: string; label: string; type: "user" | "contributor" }[];
-  contributionsByCost: Map<
-    string,
-    {
-      id: string;
-      costId: string;
-      userId: string | null;
-      contributorId: string | null;
-      percentage: { toString(): string };
-    }[]
-  >;
-  isAdmin: boolean;
-  onSetPercentages: (
-    costId: string,
-    contributions: { userId?: string; contributorId?: string; percentage: number }[]
-  ) => Promise<unknown>;
-  isPending: boolean;
+  contributors: Contributors;
+  contributions: ContributionsForMonth;
+  budgieId: string;
 }) {
-  const getPct = (costId: string, contributorId: string, type: "user" | "contributor") => {
-    const list = contributionsByCost.get(costId) ?? [];
-    const c = list.find(
-      (x) =>
-        (type === "user" && x.userId === contributorId) ||
-        (type === "contributor" && x.contributorId === contributorId)
-    );
-    return c ? Number(c.percentage) : 0;
-  };
+  const utils = api.useUtils();
+  const { data: isAdmin = false } = api.admin.isAdmin.useQuery(
+    { budgieId },
+    { enabled: !!budgieId }
+  );
+  const setPercentageMutation = api.contribution.setPercentage.useMutation({
+    onSuccess: () => {
+      const monthId = contributions[0]?.cost?.monthId;
+      if (monthId)
+        void utils.contribution.listForMonth.invalidate({ monthId });
+    },
+  });
 
-  const handleChange = async (
+  const costColumns = useMemo(() => {
+    const byId = new Map<
+      string,
+      { costId: string; name: string }
+    >();
+    for (const c of contributions) {
+      if (c.costId && c.cost?.expense && !byId.has(c.costId))
+        byId.set(c.costId, {
+          costId: c.costId,
+          name: c.cost.expense.name,
+        });
+    }
+    return Array.from(byId.values());
+  }, [contributions]);
+
+  const contributionByKey = useMemo(() => {
+    const map = new Map<string, (typeof contributions)[number]>();
+    for (const c of contributions) {
+      const key =
+        c.contributorId != null
+          ? `${c.costId}:contributor:${c.contributorId}`
+          : c.userId != null
+            ? `${c.costId}:user:${c.userId}`
+            : null;
+      if (key) map.set(key, c);
+    }
+    return map;
+  }, [contributions]);
+
+  const getContribution = (costId: string, contributorId: string) =>
+    contributionByKey.get(`${costId}:contributor:${contributorId}`);
+
+  const handleChange = (
     costId: string,
-    contributorId: string,
-    type: "user" | "contributor",
-    newPct: number
+    contributionId: string,
+    percentage: number
   ) => {
-    const othersSum = contributorRows
-      .filter((r) => r.id !== contributorId)
-      .reduce((s, r) => s + getPct(costId, r.id, r.type), 0);
-    const scale = othersSum > 0 ? (100 - newPct) / othersSum : 0;
-    const contributions: { userId?: string; contributorId?: string; percentage: number }[] =
-      contributorRows.map((r) => {
-        if (r.id === contributorId) {
-          return {
-            ...(type === "user" ? { userId: r.id } : { contributorId: r.id }),
-            percentage: newPct,
-          };
-        }
-        const pct = getPct(costId, r.id, r.type);
-        return {
-          ...(r.type === "user" ? { userId: r.id } : { contributorId: r.id }),
-          percentage: othersSum > 0 ? scale * pct : 0,
-        };
-      });
-    await onSetPercentages(costId, contributions);
+    void setPercentageMutation.mutateAsync({
+      costId,
+      contributionId,
+      percentage,
+    });
   };
 
   return (
@@ -79,19 +85,22 @@ export function ContributionGrid({
       <TableHeader>
         <TableRow>
           <TableHead>Contributor</TableHead>
-          {costs.map((c) => (
-            <TableHead key={c.id}>{c.expense.name}</TableHead>
+          {costColumns.map((col) => (
+            <TableHead key={col.costId}>{col.name}</TableHead>
           ))}
         </TableRow>
       </TableHeader>
       <TableBody>
-        {contributorRows.map((row) => (
-          <TableRow key={row.id}>
-            <TableCell className="font-medium">{row.label}</TableCell>
-            {costs.map((cost) => {
-              const pct = getPct(cost.id, row.id, row.type);
+        {contributors.map((contributor) => (
+          <TableRow key={contributor.id}>
+            <TableCell className="font-medium">{contributor.name}</TableCell>
+            {costColumns.map((col) => {
+              const contribution = getContribution(col.costId, contributor.id);
+              const percentage = contribution
+                ? Number(contribution.percentage)
+                : 0;
               return (
-                <TableCell key={cost.id}>
+                <TableCell key={col.costId}>
                   {isAdmin ? (
                     <Input
                       type="number"
@@ -99,16 +108,18 @@ export function ContributionGrid({
                       max={100}
                       step={0.5}
                       className="h-8 w-16"
-                      value={pct}
-                      disabled={isPending}
+                      value={percentage}
+                      disabled={
+                        setPercentageMutation.isPending || !contribution
+                      }
                       onChange={(e) => {
                         const v = parseFloat(e.target.value);
-                        if (!Number.isNaN(v))
-                          void handleChange(cost.id, row.id, row.type, v);
+                        if (!Number.isNaN(v) && contribution)
+                          handleChange(col.costId, contribution.id, v);
                       }}
                     />
                   ) : (
-                    `${pct}%`
+                    `${percentage}%`
                   )}
                 </TableCell>
               );

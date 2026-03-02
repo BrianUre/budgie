@@ -28,7 +28,7 @@ export class ContributionService {
     return this.db.contribution.findMany({
       where: { cost: { monthId } },
       include: {
-        cost: true,
+        cost: { include: { expense: true } },
         user: true,
         contributor: true,
       },
@@ -117,3 +117,7 @@ export class ContributionService {
     });
   }
 }
+
+export type ContributionsForMonth = Awaited<
+  ReturnType<ContributionService["listForMonth"]>
+>;
