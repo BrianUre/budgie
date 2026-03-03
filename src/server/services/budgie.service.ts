@@ -28,6 +28,11 @@ export class BudgieService {
       await tx.admin.create({
         data: { budgieId: budgie.id, userId },
       });
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (!user) throw new Error("User not found");
+      await tx.contributor.create({
+        data: { budgieId: budgie.id, name: user.email, userId },
+      });
       return budgie;
     });
   }

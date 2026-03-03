@@ -13,12 +13,30 @@ export class ContributorService {
     return this.db.contributor.findMany({
       where: { budgieId },
       orderBy: { name: "asc" },
+      include: { user: true },
     });
   }
 
-  async add(data: { budgieId: string; name: string }) {
+  async add(data: {
+    budgieId: string;
+    name?: string;
+    userId?: string;
+  }) {
+    let name = data.name;
+    if (data.userId != null && !name) {
+      const user = await this.db.user.findUnique({
+        where: { id: data.userId },
+      });
+      if (!user) throw new Error("User not found");
+      name = user.email;
+    }
+    if (!name?.trim()) throw new Error("Name is required for contributor");
     return this.db.contributor.create({
-      data,
+      data: {
+        budgieId: data.budgieId,
+        name: name.trim(),
+        userId: data.userId ?? null,
+      },
     });
   }
 

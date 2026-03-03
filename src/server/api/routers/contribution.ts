@@ -3,8 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 
 const contributionItemSchema = z.object({
-  userId: z.string().optional(),
-  contributorId: z.string().optional(),
+  contributorId: z.string(),
   percentage: z.number().min(0).max(100),
 });
 
@@ -39,9 +38,6 @@ export const contributionRouter = createTRPCRouter({
             return Math.abs(sum - 100) < 0.01;
           },
           { message: "Percentages must sum to 100" }
-        ).refine(
-          (arr) => arr.every((c) => (c.userId ? !c.contributorId : !!c.contributorId)),
-          { message: "Each item must have exactly one of userId or contributorId" }
         ),
       })
     )

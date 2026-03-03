@@ -11,56 +11,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Contributors } from "@/server/services/contributor.service";
-import type { ContributionsForMonth } from "@/server/services/contribution.service";
 
 export function ContributionGrid({
-  contributors,
-  contributions,
   budgieId,
+  monthId,
 }: {
-  contributors: Contributors;
-  contributions: ContributionsForMonth;
   budgieId: string;
+  monthId: string;
 }) {
   const utils = api.useUtils();
+  const { data: contributors = [] } = api.contributor.list.useQuery(
+    { budgieId },
+    { enabled: !!budgieId }
+  );
+  const { data: contributions = [] } = api.contribution.listForMonth.useQuery(
+    { monthId },
+    { enabled: !!monthId }
+  );
   const { data: isAdmin = false } = api.admin.isAdmin.useQuery(
     { budgieId },
     { enabled: !!budgieId }
   );
   const setPercentageMutation = api.contribution.setPercentage.useMutation({
     onSuccess: () => {
-      const monthId = contributions[0]?.cost?.monthId;
-      if (monthId)
-        void utils.contribution.listForMonth.invalidate({ monthId });
+      void utils.contribution.listForMonth.invalidate({ monthId });
     },
   });
 
   const costColumns = useMemo(() => {
-    const byId = new Map<
-      string,
-      { costId: string; name: string }
-    >();
-    for (const c of contributions) {
-      if (c.costId && c.cost?.expense && !byId.has(c.costId))
-        byId.set(c.costId, {
-          costId: c.costId,
-          name: c.cost.expense.name,
+    const byId = new Map<string, { costId: string; name: string }>();
+    for (const contribution of contributions) {
+      if (
+        contribution.costId &&
+        contribution.cost?.expense &&
+        !byId.has(contribution.costId)
+      ) {
+        byId.set(contribution.costId, {
+          costId: contribution.costId,
+          name: contribution.cost.expense.name,
         });
+      }
     }
     return Array.from(byId.values());
   }, [contributions]);
 
   const contributionByKey = useMemo(() => {
     const map = new Map<string, (typeof contributions)[number]>();
-    for (const c of contributions) {
-      const key =
-        c.contributorId != null
-          ? `${c.costId}:contributor:${c.contributorId}`
-          : c.userId != null
-            ? `${c.costId}:user:${c.userId}`
-            : null;
-      if (key) map.set(key, c);
+    for (const contribution of contributions) {
+      map.set(
+        `${contribution.costId}:contributor:${contribution.contributorId}`,
+        contribution
+      );
     }
     return map;
   }, [contributions]);
@@ -85,22 +86,27 @@ export function ContributionGrid({
       <TableHeader>
         <TableRow>
           <TableHead>Contributor</TableHead>
-          {costColumns.map((col) => (
-            <TableHead key={col.costId}>{col.name}</TableHead>
+          {costColumns.map((column) => (
+            <TableHead key={column.costId}>{column.name}</TableHead>
           ))}
         </TableRow>
       </TableHeader>
       <TableBody>
         {contributors.map((contributor) => (
           <TableRow key={contributor.id}>
-            <TableCell className="font-medium">{contributor.name}</TableCell>
-            {costColumns.map((col) => {
-              const contribution = getContribution(col.costId, contributor.id);
+            <TableCell className="font-medium">
+              {contributor.user?.email ?? contributor.name}
+            </TableCell>
+            {costColumns.map((column) => {
+              const contribution = getContribution(
+                column.costId,
+                contributor.id
+              );
               const percentage = contribution
                 ? Number(contribution.percentage)
                 : 0;
               return (
-                <TableCell key={col.costId}>
+                <TableCell key={column.costId}>
                   {isAdmin ? (
                     <Input
                       type="number"
@@ -112,10 +118,15 @@ export function ContributionGrid({
                       disabled={
                         setPercentageMutation.isPending || !contribution
                       }
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        if (!Number.isNaN(v) && contribution)
-                          handleChange(col.costId, contribution.id, v);
+                      onChange={(event) => {
+                        const value = parseFloat(event.target.value);
+                        if (!Number.isNaN(value) && contribution) {
+                          handleChange(
+                            column.costId,
+                            contribution.id,
+                            value
+                          );
+                        }
                       }}
                     />
                   ) : (

@@ -25,7 +25,17 @@ export const contributorRouter = createTRPCRouter({
     }),
 
   add: protectedProcedure
-    .input(z.object({ budgieId: z.string(), name: z.string().min(1).max(200) }))
+    .input(
+      z
+        .object({
+          budgieId: z.string(),
+          name: z.string().min(1).max(200).optional(),
+          userId: z.string().optional(),
+        })
+        .refine((v) => v.name != null || v.userId != null, {
+          message: "At least one of name or userId is required",
+        })
+    )
     .mutation(async ({ ctx, input }) => {
       await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
 

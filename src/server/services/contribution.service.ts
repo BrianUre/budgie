@@ -2,12 +2,11 @@ import type { PrismaClient } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 
 /**
- * Input for one contribution: either userId (user) or contributorId (Contributor table), and percentage.
+ * Input for one contribution: contributorId and percentage.
  * All percentages for a cost must sum to 100.
  */
 export type ContributionInput = {
-  userId?: string;
-  contributorId?: string;
+  contributorId: string;
   percentage: number;
 };
 
@@ -18,8 +17,7 @@ export class ContributionService {
     return this.db.contribution.findMany({
       where: { costId },
       include: {
-        user: true,
-        contributor: true,
+        contributor: { include: { user: true } },
       },
     });
   }
@@ -29,15 +27,14 @@ export class ContributionService {
       where: { cost: { monthId } },
       include: {
         cost: { include: { expense: true } },
-        user: true,
-        contributor: true,
+        contributor: { include: { user: true } },
       },
     });
   }
 
   /**
    * Set all contributions for a cost. Replaces existing rows.
-   * Enforces: sum(percentages) === 100. Exactly one of userId or contributorId per row.
+   * Enforces: sum(percentages) === 100.
    */
   async setPercentages(costId: string, contributions: ContributionInput[]) {
     const sum = contributions.reduce((s, c) => s + c.percentage, 0);
@@ -46,15 +43,6 @@ export class ContributionService {
         `Percentages must sum to 100, got ${sum}`
       );
     }
-    for (const c of contributions) {
-      const hasUser = !!c.userId;
-      const hasContributor = !!c.contributorId;
-      if (hasUser === hasContributor) {
-        throw new Error(
-          "Each contribution must have exactly one of userId or contributorId"
-        );
-      }
-    }
 
     return this.db.$transaction(async (tx) => {
       await tx.contribution.deleteMany({ where: { costId } });
@@ -62,8 +50,7 @@ export class ContributionService {
       const created = await tx.contribution.createManyAndReturn({
         data: contributions.map((c) => ({
           costId,
-          userId: c.userId ?? null,
-          contributorId: c.contributorId ?? null,
+          contributorId: c.contributorId,
           percentage: new Decimal(c.percentage),
         })),
       });
