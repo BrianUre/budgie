@@ -19,17 +19,6 @@ CREATE TABLE "budgies" (
 );
 
 -- CreateTable
-CREATE TABLE "admins" (
-    "id" TEXT NOT NULL,
-    "budgieId" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "admins_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "months" (
     "id" TEXT NOT NULL,
     "budgieId" TEXT NOT NULL,
@@ -69,6 +58,8 @@ CREATE TABLE "contributors" (
     "id" TEXT NOT NULL,
     "budgieId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "isAdmin" BOOLEAN NOT NULL DEFAULT false,
+    "userId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -79,8 +70,7 @@ CREATE TABLE "contributors" (
 CREATE TABLE "contributions" (
     "id" TEXT NOT NULL,
     "costId" TEXT NOT NULL,
-    "userId" TEXT,
-    "contributorId" TEXT,
+    "contributorId" TEXT NOT NULL,
     "percentage" DECIMAL(5,2) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -124,19 +114,13 @@ CREATE TABLE "notes" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "admins_budgieId_userId_key" ON "admins"("budgieId", "userId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "months_budgieId_year_month_key" ON "months"("budgieId", "year", "month");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "costs_monthId_expenseId_key" ON "costs"("monthId", "expenseId");
 
--- AddForeignKey
-ALTER TABLE "admins" ADD CONSTRAINT "admins_budgieId_fkey" FOREIGN KEY ("budgieId") REFERENCES "budgies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "admins" ADD CONSTRAINT "admins_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- CreateIndex
+CREATE UNIQUE INDEX "contributions_costId_contributorId_key" ON "contributions"("costId", "contributorId");
 
 -- AddForeignKey
 ALTER TABLE "months" ADD CONSTRAINT "months_budgieId_fkey" FOREIGN KEY ("budgieId") REFERENCES "budgies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -154,10 +138,10 @@ ALTER TABLE "costs" ADD CONSTRAINT "costs_expenseId_fkey" FOREIGN KEY ("expenseI
 ALTER TABLE "contributors" ADD CONSTRAINT "contributors_budgieId_fkey" FOREIGN KEY ("budgieId") REFERENCES "budgies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "contributions" ADD CONSTRAINT "contributions_costId_fkey" FOREIGN KEY ("costId") REFERENCES "costs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "contributors" ADD CONSTRAINT "contributors_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "contributions" ADD CONSTRAINT "contributions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "contributions" ADD CONSTRAINT "contributions_costId_fkey" FOREIGN KEY ("costId") REFERENCES "costs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "contributions" ADD CONSTRAINT "contributions_contributorId_fkey" FOREIGN KEY ("contributorId") REFERENCES "contributors"("id") ON DELETE CASCADE ON UPDATE CASCADE;

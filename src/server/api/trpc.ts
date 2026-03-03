@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
-import { getAuth } from "@clerk/nextjs/server";
+import { clerkClient, getAuth } from "@clerk/nextjs/server";
 import { db } from "@/server/db";
 import { createServices } from "@/server/services";
 import superjson from "superjson";
@@ -39,11 +39,17 @@ const isAuthenticated = t.middleware(async ({ ctx, next }) => {
   if (!ctx.auth.userId) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
+  const userId = ctx.auth.userId;
+  const clerkUser = await clerkClient().users.getUser(userId);
+  const email =
+    clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)
+      ?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress ?? "";
+  await ctx.services.user.upsert(userId, email);
 
   return next({
     ctx: {
       auth: {
-        userId: ctx.auth.userId,
+        userId,
       },
     },
   });

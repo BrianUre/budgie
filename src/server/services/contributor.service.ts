@@ -21,6 +21,7 @@ export class ContributorService {
     budgieId: string;
     name?: string;
     userId?: string;
+    isAdmin?: boolean;
   }) {
     let name = data.name;
     if (data.userId != null && !name) {
@@ -35,8 +36,23 @@ export class ContributorService {
       data: {
         budgieId: data.budgieId,
         name: name.trim(),
+        isAdmin: data.isAdmin ?? false,
         userId: data.userId ?? null,
       },
+    });
+  }
+
+  async isAdmin(budgieId: string, userId: string): Promise<boolean> {
+    const contributor = await this.db.contributor.findFirst({
+      where: { budgieId, userId, isAdmin: true },
+    });
+    return !!contributor;
+  }
+
+  async listAdminsForBudgie(budgieId: string) {
+    return this.db.contributor.findMany({
+      where: { budgieId, isAdmin: true },
+      include: { user: true },
     });
   }
 

@@ -3,11 +3,11 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 
 async function requireBudgieAdmin(
-  services: { admin: { isAdmin: (budgieId: string, userId: string) => Promise<boolean> } },
+  services: { contributor: { isAdmin: (budgieId: string, userId: string) => Promise<boolean> } },
   budgieId: string,
   userId: string
 ) {
-  const isAdmin = await services.admin.isAdmin(budgieId, userId);
+  const isAdmin = await services.contributor.isAdmin(budgieId, userId);
   if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN", message: "Not an admin of this budgie" });
 }
 

@@ -16,7 +16,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  admins        Admin[]
   contributors  Contributor[]
   payments      Payment[]
   notes         Note[] @relation("NoteCreator")
@@ -30,26 +29,11 @@ model Budgie {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  admins       Admin[]
   months       Month[]
   expenses     Expense[]
   contributors Contributor[]
 
   @@map("budgies")
-}
-
-model Admin {
-  id        String   @id @default(uuid())
-  budgieId  String
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  budgie Budgie @relation(fields: [budgieId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([budgieId, userId])
-  @@map("admins")
 }
 
 model Month {
@@ -101,6 +85,7 @@ model Contributor {
   id        String   @id @default(uuid())
   budgieId  String
   name      String
+  isAdmin   Boolean  @default(false)
   userId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

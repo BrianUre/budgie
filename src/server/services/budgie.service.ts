@@ -5,7 +5,9 @@ export class BudgieService {
 
   async listForUser(userId: string) {
     return this.db.budgie.findMany({
-      where: { admins: { some: { userId } } },
+      where: {
+        contributors: { some: { userId, isAdmin: true } },
+      },
       orderBy: { updatedAt: "desc" },
     });
   }
@@ -25,13 +27,15 @@ export class BudgieService {
       await tx.month.create({
         data: { budgieId: budgie.id, year, month },
       });
-      await tx.admin.create({
-        data: { budgieId: budgie.id, userId },
-      });
       const user = await tx.user.findUnique({ where: { id: userId } });
       if (!user) throw new Error("User not found");
       await tx.contributor.create({
-        data: { budgieId: budgie.id, name: user.email, userId },
+        data: {
+          budgieId: budgie.id,
+          name: user.email,
+          isAdmin: true,
+          userId,
+        },
       });
       return budgie;
     });

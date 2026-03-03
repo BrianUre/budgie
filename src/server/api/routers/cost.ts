@@ -21,7 +21,7 @@ export const costRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const isAdmin = await ctx.services.admin.isAdmin(
+      const isAdmin = await ctx.services.contributor.isAdmin(
         input.budgieId,
         ctx.auth.userId
       );

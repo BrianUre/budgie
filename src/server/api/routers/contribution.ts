@@ -13,7 +13,7 @@ export const contributionRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const cost = await ctx.services.cost.getById(input.costId);
       if (!cost) throw new TRPCError({ code: "NOT_FOUND" });
-      const isAdmin = await ctx.services.admin.isAdmin(cost.month.budgieId, ctx.auth.userId);
+      const isAdmin = await ctx.services.contributor.isAdmin(cost.month.budgieId, ctx.auth.userId);
       if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
       return ctx.services.contribution.listForCost(input.costId);
     }),
@@ -23,7 +23,7 @@ export const contributionRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const month = await ctx.services.month.getById(input.monthId);
       if (!month) throw new TRPCError({ code: "NOT_FOUND" });
-      const isAdmin = await ctx.services.admin.isAdmin(month.budgieId, ctx.auth.userId);
+      const isAdmin = await ctx.services.contributor.isAdmin(month.budgieId, ctx.auth.userId);
       if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
       return ctx.services.contribution.listForMonth(input.monthId);
     }),
@@ -44,7 +44,7 @@ export const contributionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const cost = await ctx.services.cost.getById(input.costId);
       if (!cost) throw new TRPCError({ code: "NOT_FOUND" });
-      const isAdmin = await ctx.services.admin.isAdmin(cost.month.budgieId, ctx.auth.userId);
+      const isAdmin = await ctx.services.contributor.isAdmin(cost.month.budgieId, ctx.auth.userId);
       if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
       return ctx.services.contribution.setPercentages(input.costId, input.contributions);
     }),
@@ -60,7 +60,7 @@ export const contributionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const cost = await ctx.services.cost.getById(input.costId);
       if (!cost) throw new TRPCError({ code: "NOT_FOUND" });
-      const isAdmin = await ctx.services.admin.isAdmin(cost.month.budgieId, ctx.auth.userId);
+      const isAdmin = await ctx.services.contributor.isAdmin(cost.month.budgieId, ctx.auth.userId);
       if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
       return ctx.services.contribution.setPercentage(
         input.costId,

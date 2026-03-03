@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@prisma/client";
-import { AdminService } from "./admin.service";
 import { BudgieService } from "./budgie.service";
 import { ContributionService } from "./contribution.service";
 import { ContributorService } from "./contributor.service";
@@ -15,7 +14,6 @@ export function createServices(db: PrismaClient) {
     expense: new ExpenseService(db),
     cost: new CostService(db),
     contributor: new ContributorService(db),
-    admin: new AdminService(db),
     contribution: new ContributionService(db),
     user: new UserService(db),
   };
@@ -23,7 +21,6 @@ export function createServices(db: PrismaClient) {
 
 export type Services = ReturnType<typeof createServices>;
 
-export { AdminService } from "./admin.service";
 export { BudgieService } from "./budgie.service";
 export { ContributionService } from "./contribution.service";
 export type { ContributionInput } from "./contribution.service";
