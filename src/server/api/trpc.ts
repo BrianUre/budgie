@@ -44,7 +44,10 @@ const isAuthenticated = t.middleware(async ({ ctx, next }) => {
   const email =
     clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)
       ?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress ?? "";
-  await ctx.services.user.upsert(userId, email);
+  const name =
+    [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim() ||
+    null;
+  await ctx.services.user.upsert(userId, email, name);
 
   return next({
     ctx: {

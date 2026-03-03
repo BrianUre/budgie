@@ -3,11 +3,17 @@ import type { PrismaClient } from "@prisma/client";
 export class UserService {
   constructor(private readonly db: PrismaClient) {}
 
-  async upsert(id: string, email: string) {
+  async upsert(id: string, email: string, name?: string | null) {
     return this.db.user.upsert({
       where: { id },
-      create: { id, email },
-      update: { email },
+      create: { id, email, name: name ?? undefined },
+      update: { email, name: name ?? undefined },
+    });
+  }
+
+  async delete(id: string) {
+    return this.db.user.delete({
+      where: { id },
     });
   }
 
