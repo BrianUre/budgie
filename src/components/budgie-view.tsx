@@ -94,7 +94,7 @@ function CostEdit({
   return (
     <button
       type="button"
-      className="flex items-center gap-1 hover:underline"
+      className="flex items-center gap-1 hover:underline text-2xl"
       onClick={() => {
         setDraft(String(value));
         setEditing(true);
@@ -121,6 +121,9 @@ function ContributionCell({
   monthId: string;
   budgieId: string;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
   const utils = api.useUtils();
   const setPercentageMutation = api.contribution.setPercentage.useMutation({
     onSuccess: () => {
@@ -132,64 +135,97 @@ function ContributionCell({
   const percentage = contribution ? Number(contribution.percentage) : 0;
   const amount = costAmount * (percentage / 100);
 
+  const handleSave = async () => {
+    const value = parseFloat(draft);
+    if (
+      !Number.isNaN(value) &&
+      value >= 0 &&
+      value <= 100 &&
+      contribution
+    ) {
+      await setPercentageMutation.mutateAsync({
+        costId,
+        contributionId: contribution.id,
+        percentage: value,
+      });
+      setEditing(false);
+    }
+  };
+
+  const canEdit = isAdmin && !!contribution;
+
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="font-mono text-sm">{formatMoney(amount)}</span>
-      {isAdmin && contribution ? (
-        <Input
-          type="number"
-          min={0}
-          max={100}
-          step={0.5}
-          className="h-8 w-16"
-          value={percentage}
-          disabled={setPercentageMutation.isPending}
-          onChange={(event) => {
-            const value = parseFloat(event.target.value);
-            if (!Number.isNaN(value)) {
-              void setPercentageMutation.mutateAsync({
-                costId,
-                contributionId: contribution.id,
-                percentage: value,
-              });
-            }
-          }}
-        />
+    <div>
+    <div className="grid max-w-48 grid-cols-2 justify-items-end gap-4">
+      <span className="font-mono text-2xl">{formatMoney(amount)}</span>
+      {canEdit && editing ? (
+        <span className="flex items-center gap-1">
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            step={0.5}
+            className="h-8 w-16"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => void handleSave()}
+            onKeyDown={(e) => e.key === "Enter" && void handleSave()}
+          />
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8"
+            onClick={() => void handleSave()}
+            disabled={setPercentageMutation.isPending}
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+        </span>
       ) : (
-        <span className="text-muted-foreground text-xs">{percentage}%</span>
+        <span
+          className={
+            canEdit
+              ? "cursor-pointer text-xl hover:underline"
+              : "text-muted-foreground text-xs"
+          }
+          onClick={
+            canEdit
+              ? () => {
+                  setDraft(String(percentage));
+                  setEditing(true);
+                }
+              : undefined
+          }
+          onKeyDown={
+            canEdit
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setDraft(String(percentage));
+                    setEditing(true);
+                  }
+                }
+              : undefined
+          }
+          role={canEdit ? "button" : undefined}
+          tabIndex={canEdit ? 0 : undefined}
+        >
+          {percentage}%
+        </span>
       )}
+    </div>
     </div>
   );
 }
 
-export function BudgieView({
+function AddExpenseDialog({
   budgieId,
   selectedMonthId,
-  isAdmin,
-  contributors,
-  className,
 }: {
   budgieId: string;
   selectedMonthId: string | null;
-  isAdmin: boolean;
-  contributors: Contributor[];
-  className?: string;
 }) {
   const utils = api.useUtils();
-  const { data: costs = [] } = api.cost.listForMonth.useQuery(
-    { monthId: selectedMonthId!, budgieId },
-    { enabled: !!selectedMonthId }
-  );
-  const costMutation = api.cost.updateAmount.useMutation({
-    onSuccess: () => {
-      if (selectedMonthId) {
-        void utils.cost.listForMonth.invalidate({
-          monthId: selectedMonthId,
-          budgieId,
-        });
-      }
-    },
-  });
   const expenseMutation = api.expense.create.useMutation({
     onSuccess: () => {
       void utils.expense.list.invalidate({ budgieId });
@@ -218,6 +254,175 @@ export function BudgieView({
     },
   });
 
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="sm" disabled={!selectedMonthId}>
+          <Plus className="h-4 w-4" />
+          Add
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            expenseForm.handleSubmit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Add expense</DialogTitle>
+            <DialogDescription>
+              Name and initial cost for the selected month.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <expenseForm.Field name="name">
+              {(field) => (
+                <div className="grid gap-2">
+                  <Label>Name</Label>
+                  <Input
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="e.g. Rent"
+                  />
+                </div>
+              )}
+            </expenseForm.Field>
+            <expenseForm.Field name="initialAmount">
+              {(field) => (
+                <div className="grid gap-2">
+                  <Label>Initial amount</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={field.state.value || ""}
+                    onChange={(e) =>
+                      field.handleChange(parseFloat(e.target.value) || 0)
+                    }
+                  />
+                </div>
+              )}
+            </expenseForm.Field>
+          </div>
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={!selectedMonthId || expenseMutation.isPending}
+            >
+              {expenseMutation.isPending ? "Adding…" : "Add"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type CostRow = {
+  id: string;
+  amount: unknown;
+  expense?: { name: string } | null;
+  contributions?: Contribution[];
+};
+
+function ExpensesTable({
+  costs,
+  contributors,
+  isAdmin,
+  budgieId,
+  selectedMonthId,
+}: {
+  costs: CostRow[];
+  contributors: Contributor[];
+  isAdmin: boolean;
+  budgieId: string;
+  selectedMonthId: string;
+}) {
+  const utils = api.useUtils();
+  const costMutation = api.cost.updateAmount.useMutation({
+    onSuccess: () => {
+      void utils.cost.listForMonth.invalidate({
+        monthId: selectedMonthId,
+        budgieId,
+      });
+    },
+  });
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Expense</TableHead>
+          <TableHead>Cost</TableHead>
+          {contributors.map((c) => (
+            <TableHead key={c.id}>{c.user?.name ?? c.name ?? "—"}</TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {costs.length === 0 ? (
+          <TableRow>
+            <TableCell
+              colSpan={2 + contributors.length}
+              className="text-muted-foreground text-center"
+            >
+              No expenses yet. Add one to get started.
+            </TableCell>
+          </TableRow>
+        ) : (
+          costs.map((cost) => (
+            <TableRow key={cost.id}>
+              <TableCell className="font-medium text-2xl">
+                {cost.expense?.name ?? "—"}
+              </TableCell>
+              <TableCell className="font-mono">
+                {isAdmin ? (
+                  <CostEdit
+                    value={Number(cost.amount)}
+                    onSave={(v) =>
+                      costMutation.mutateAsync({
+                        budgieId,
+                        costId: cost.id,
+                        amount: v,
+                      })
+                    }
+                    isPending={costMutation.isPending}
+                  />
+                ) : (
+                  formatMoney(Number(cost.amount))
+                )}
+              </TableCell>
+              {contributors.map((contributor) => (
+                <TableCell key={contributor.id}>
+                  <ContributionCell
+                    costId={cost.id}
+                    costAmount={Number(cost.amount)}
+                    contribution={(cost.contributions ?? []).find(
+                      (ct: Contribution) => ct.contributorId === contributor.id
+                    )}
+                    isAdmin={isAdmin}
+                    monthId={selectedMonthId}
+                    budgieId={budgieId}
+                  />
+                </TableCell>
+              ))}
+            </TableRow>
+          ))
+        )}
+      </TableBody>
+    </Table>
+  );
+}
+
+function TotalsPanel({
+  contributors,
+  costs,
+}: {
+  contributors: Contributor[];
+  costs: CostRow[];
+}) {
   const totalCostAmount = useMemo(
     () => costs.reduce((sum, cost) => sum + Number(cost.amount), 0),
     [costs]
@@ -240,6 +445,62 @@ export function BudgieView({
     }
     return map;
   }, [contributors, costs]);
+
+  return (
+    <div>
+      <h3 className="mb-2 text-sm font-medium text-muted-foreground">
+        Totals
+      </h3>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Total costs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-semibold">
+              {formatMoney(totalCostAmount)}
+            </p>
+          </CardContent>
+        </Card>
+        {contributors.map((contributor) => (
+          <Card key={contributor.id}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">
+                {contributor.user?.name ??
+                  contributor.user?.email ??
+                  contributor.name ??
+                  "—"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-semibold">
+                {formatMoney(totalByContributor.get(contributor.id) ?? 0)}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function BudgieView({
+  budgieId,
+  selectedMonthId,
+  isAdmin,
+  contributors,
+  className,
+}: {
+  budgieId: string;
+  selectedMonthId: string | null;
+  isAdmin: boolean;
+  contributors: Contributor[];
+  className?: string;
+}) {
+  const { data: costs = [] } = api.cost.listForMonth.useQuery(
+    { monthId: selectedMonthId!, budgieId },
+    { enabled: !!selectedMonthId }
+  );
 
   if (!selectedMonthId) {
     return (
@@ -272,177 +533,25 @@ export function BudgieView({
             </CardDescription>
           </div>
           {isAdmin && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm" disabled={!selectedMonthId}>
-                  <Plus className="h-4 w-4" />
-                  Add
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    expenseForm.handleSubmit();
-                  }}
-                >
-                  <DialogHeader>
-                    <DialogTitle>Add expense</DialogTitle>
-                    <DialogDescription>
-                      Name and initial cost for the selected month.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <expenseForm.Field name="name">
-                      {(field) => (
-                        <div className="grid gap-2">
-                          <Label>Name</Label>
-                          <Input
-                            value={field.state.value}
-                            onChange={(e) =>
-                              field.handleChange(e.target.value)
-                            }
-                            placeholder="e.g. Rent"
-                          />
-                        </div>
-                      )}
-                    </expenseForm.Field>
-                    <expenseForm.Field name="initialAmount">
-                      {(field) => (
-                        <div className="grid gap-2">
-                          <Label>Initial amount</Label>
-                          <Input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={field.state.value || ""}
-                            onChange={(e) =>
-                              field.handleChange(
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                          />
-                        </div>
-                      )}
-                    </expenseForm.Field>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="submit"
-                      disabled={
-                        !selectedMonthId || expenseMutation.isPending
-                      }
-                    >
-                      {expenseMutation.isPending ? "Adding…" : "Add"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <AddExpenseDialog
+              budgieId={budgieId}
+              selectedMonthId={selectedMonthId}
+            />
           )}
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Expense</TableHead>
-                <TableHead>Cost</TableHead>
-                {contributors.map((c) => (
-                  <TableHead key={c.id}>
-                    {c.user?.name ?? c.name ?? "—"}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {costs.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={2 + contributors.length}
-                    className="text-muted-foreground text-center"
-                  >
-                    No expenses yet. Add one to get started.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                costs.map((cost) => (
-                  <TableRow key={cost.id}>
-                    <TableCell className="font-medium">
-                      {cost.expense?.name ?? "—"}
-                    </TableCell>
-                    <TableCell className="font-mono">
-                      {isAdmin ? (
-                        <CostEdit
-                          value={Number(cost.amount)}
-                          onSave={(v) =>
-                            costMutation.mutateAsync({
-                              budgieId,
-                              costId: cost.id,
-                              amount: v,
-                            })
-                          }
-                          isPending={costMutation.isPending}
-                        />
-                      ) : (
-                        formatMoney(Number(cost.amount))
-                      )}
-                    </TableCell>
-                    {contributors.map((contributor) => (
-                      <TableCell key={contributor.id}>
-                        <ContributionCell
-                          costId={cost.id}
-                          costAmount={Number(cost.amount)}
-                          contribution={(cost.contributions ?? []).find(
-                            (ct: Contribution) =>
-                              ct.contributorId === contributor.id
-                          )}
-                          isAdmin={isAdmin}
-                          monthId={selectedMonthId}
-                          budgieId={budgieId}
-                        />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <ExpensesTable
+            costs={costs}
+            contributors={contributors}
+            isAdmin={isAdmin}
+            budgieId={budgieId}
+            selectedMonthId={selectedMonthId}
+          />
         </CardContent>
       </Card>
 
       {contributors.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-            Totals
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Total costs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xl font-semibold">
-                  {formatMoney(totalCostAmount)}
-                </p>
-              </CardContent>
-            </Card>
-            {contributors.map((contributor) => (
-              <Card key={contributor.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">
-                    {contributor.user?.name ?? contributor.user?.email ?? contributor.name ?? "—"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xl font-semibold">
-                    {formatMoney(totalByContributor.get(contributor.id) ?? 0)}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <TotalsPanel contributors={contributors} costs={costs} />
       )}
     </div>
   );
