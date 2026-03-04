@@ -77,14 +77,14 @@ function CostEdit({
 export function ExpenseCostRow({
   expense,
   cost,
-  effectiveMonthId,
+  selectedMonthId,
   isAdmin,
   onSaveCost,
   isCostPending,
 }: {
   expense: { id: string; name: string };
   cost: { id: string; amount: unknown };
-  effectiveMonthId: string | null;
+  selectedMonthId: string | null;
   isAdmin: boolean;
   onSaveCost: (costId: string, amount: number) => Promise<unknown>;
   isCostPending: boolean;
@@ -94,7 +94,7 @@ export function ExpenseCostRow({
   return (
     <li className="flex items-center justify-between rounded border p-2">
       <span>{expense.name}</span>
-      {effectiveMonthId && (
+      {selectedMonthId && (
         <span className="font-mono">
           {isAdmin ? (
             <CostEdit

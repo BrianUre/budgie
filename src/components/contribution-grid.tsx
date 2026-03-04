@@ -28,7 +28,7 @@ export function ContributionGrid({
     { monthId },
     { enabled: !!monthId }
   );
-  const { data: isAdmin = false } = api.admin.isAdmin.useQuery(
+  const { data: isAdmin = false } = api.contributor.isAdmin.useQuery(
     { budgieId },
     { enabled: !!budgieId }
   );

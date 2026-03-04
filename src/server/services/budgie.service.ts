@@ -17,15 +17,14 @@ export class BudgieService {
     userId: string
   ) {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+    const date = new Date(now.getFullYear(), now.getMonth(), 1);
 
     return this.db.$transaction(async (tx) => {
       const budgie = await tx.budgie.create({
         data: { name: data.name },
       });
       await tx.month.create({
-        data: { budgieId: budgie.id, year, month },
+        data: { budgieId: budgie.id, date },
       });
       const user = await tx.user.findUnique({ where: { id: userId } });
       if (!user) throw new Error("User not found");

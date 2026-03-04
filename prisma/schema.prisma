@@ -40,8 +40,7 @@ model Budgie {
 model Month {
   id        String   @id @default(uuid())
   budgieId  String
-  year      Int
-  month     Int
+  date      DateTime @db.Date
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -49,7 +48,7 @@ model Month {
   costs  Cost[]
   notes  Note[]
 
-  @@unique([budgieId, year, month])
+  @@unique([budgieId, date])
   @@map("months")
 }
 

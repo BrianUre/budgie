@@ -1,7 +1,7 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
@@ -30,18 +30,13 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { ContributionGrid } from "@/components/contribution-grid";
 import { ExpenseCostRow } from "@/components/expense-cost-row";
 
-const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-function formatMonth(year: number, month: number) {
-  return `${MONTH_NAMES[month - 1]} ${year}`;
+function formatMonth(date: Date) {
+  const monthName = new Intl.DateTimeFormat(undefined, { month: "short" }).format(date);
+  return `${monthName} ${date.getFullYear()}`;
 }
 
 export function BudgieDetailClient() {
   const params = useParams();
-  const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
   const id = params.id as string;
 
@@ -59,52 +54,43 @@ export function BudgieDetailClient() {
     { enabled: !!id && !!budgie }
   );
 
-  const now = useMemo(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() + 1 }), []);
-  const currentMonthRow = useMemo(
-    () =>
-      months.find(
-        (month) =>
-          month.year === now.year && month.month === now.month
-      ),
-    [months, now]
-  );
   const [selectedMonthId, setSelectedMonthId] = useState<string | null>(null);
-  const effectiveMonthId = selectedMonthId ?? currentMonthRow?.id ?? months[0]?.id ?? null;
+  useEffect(() => {
+    if (months.length > 0 && selectedMonthId === null) {
+      setSelectedMonthId(months[0]!.id);
+    }
+  }, [months, selectedMonthId]);
 
   const { data: expenses = [] } = api.expense.list.useQuery(
     { budgieId: id },
     { enabled: !!id && !!budgie }
   );
   const { data: costs = [] } = api.cost.listForMonth.useQuery(
-    { monthId: effectiveMonthId!, budgieId: id },
-    { enabled: !!effectiveMonthId }
+    { monthId: selectedMonthId!, budgieId: id },
+    { enabled: !!selectedMonthId }
   );
-  const { data: admins = [] } = api.admin.listForBudgie.useQuery(
-    { budgieId: id },
-    { enabled: !!id && !!budgie }
-  );
-  const { data: contributorsList = [] } = api.contributor.list.useQuery(
+  const { data: contributors = [] } = api.contributor.list.useQuery(
     { budgieId: id },
     { enabled: !!id && !!budgie }
   );
   const { data: contributionsForMonth = [] } = api.contribution.listForMonth.useQuery(
-    { monthId: effectiveMonthId! },
-    { enabled: !!effectiveMonthId }
+    { monthId: selectedMonthId! },
+    { enabled: !!selectedMonthId }
   );
-  const { data: isAdmin = false } = api.admin.isAdmin.useQuery(
+  const { data: isAdmin = false } = api.contributor.isAdmin.useQuery(
     { budgieId: id },
     { enabled: !!id && !!budgie }
   );
 
   const costMutation = api.cost.updateAmount.useMutation({
     onSuccess: () => {
-      void utils.cost.listForMonth.invalidate({ monthId: effectiveMonthId! });
+      void utils.cost.listForMonth.invalidate({ monthId: selectedMonthId! });
     },
   });
   const expenseMutation = api.expense.create.useMutation({
     onSuccess: () => {
       void utils.expense.list.invalidate({ budgieId: id });
-      void utils.cost.listForMonth.invalidate({ monthId: effectiveMonthId! });
+      void utils.cost.listForMonth.invalidate({ monthId: selectedMonthId! });
     },
   });
   const contributorMutation = api.contributor.add.useMutation({
@@ -113,8 +99,8 @@ export function BudgieDetailClient() {
     },
   });
   const selectedMonth = useMemo(
-    () => months.find((month) => month.id === effectiveMonthId),
-    [months, effectiveMonthId]
+    () => months.find((month) => month.id === selectedMonthId),
+    [months, selectedMonthId]
   );
 
   const contributionsByCost = useMemo(() => {
@@ -129,7 +115,7 @@ export function BudgieDetailClient() {
 
   const costByExpense = useMemo(() => {
     const map = new Map<string, (typeof costs)[0]>();
-    for (const cost of costs) {
+      for (const cost of costs) {
       map.set(cost.expenseId, cost);
     }
     return map;
@@ -141,7 +127,7 @@ export function BudgieDetailClient() {
 
   const totalByContributor = useMemo(() => {
     const map = new Map<string, number>();
-    for (const contributor of contributorsList) {
+    for (const contributor of contributors) {
       let total = 0;
       for (const cost of costs) {
         const costContributions = contributionsByCost.get(cost.id) ?? [];
@@ -157,17 +143,16 @@ export function BudgieDetailClient() {
       map.set(contributor.id, total);
     }
     return map;
-  }, [contributorsList, costs, contributionsByCost]);
+  }, [contributors, costs, contributionsByCost]);
 
   const expenseForm = useForm({
     defaultValues: { name: "", initialAmount: 0 },
     onSubmit: async ({ value }) => {
       await expenseMutation.mutateAsync({
         budgieId: id,
+        monthId: selectedMonthId!,
         name: value.name,
         initialAmount: value.initialAmount,
-        year: selectedMonth?.year,
-        month: selectedMonth?.month,
       });
     },
   });
@@ -232,12 +217,12 @@ export function BudgieDetailClient() {
               <Button
                 key={month.id}
                 variant={
-                  effectiveMonthId === month.id ? "default" : "outline"
+                  selectedMonthId === month.id ? "default" : "outline"
                 }
                 size="sm"
                 onClick={() => setSelectedMonthId(month.id)}
               >
-                {formatMonth(month.year, month.month)}
+                {formatMonth(new Date(month.date))}
               </Button>
             ))}
           </CardContent>
@@ -305,7 +290,7 @@ export function BudgieDetailClient() {
                       <DialogFooter>
                         <Button
                           type="submit"
-                          disabled={expenseMutation.isPending}
+                          disabled={!selectedMonthId || expenseMutation.isPending}
                         >
                           {expenseMutation.isPending ? "Adding…" : "Add"}
                         </Button>
@@ -326,7 +311,7 @@ export function BudgieDetailClient() {
                         key={expense.id}
                         expense={expense}
                         cost={cost}
-                        effectiveMonthId={effectiveMonthId}
+                        selectedMonthId={selectedMonthId}
                         isAdmin={isAdmin}
                         onSaveCost={(costId, amount) =>
                           costMutation.mutateAsync({ budgieId: id, costId, amount })
@@ -387,28 +372,6 @@ export function BudgieDetailClient() {
                             </div>
                           )}
                         </contributorForm.Field>
-                        <contributorForm.Field name="linkToUserId">
-                          {(field) => (
-                            <div className="grid gap-2">
-                              <Label>Link to user (optional)</Label>
-                              <select
-                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                value={field.state.value}
-                                onChange={(e) => field.handleChange(e.target.value)}
-                              >
-                                <option value="">None</option>
-                                {admins.map((admin) => (
-                                  <option
-                                    key={admin.user.id}
-                                    value={admin.user.id}
-                                  >
-                                    {admin.user.email}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                        </contributorForm.Field>
                       </div>
                       <DialogFooter>
                         <Button
@@ -425,12 +388,12 @@ export function BudgieDetailClient() {
             </CardHeader>
             <CardContent>
               <ul className="space-y-1 text-sm">
-                {contributorsList.map((contributor) => (
+                {contributors.map((contributor) => (
                   <li key={contributor.id}>
                     {contributor.user?.email ?? contributor.name}
                   </li>
                 ))}
-                {contributorsList.length === 0 && (
+                {contributors.length === 0 && (
                   <li className="text-muted-foreground">No contributors yet.</li>
                 )}
               </ul>
@@ -438,8 +401,8 @@ export function BudgieDetailClient() {
           </Card>
         </div>
 
-        {contributorsList.length > 0 && !!effectiveMonthId && (
-          <Card className="b-dev">
+        {contributors.length > 0 && !!selectedMonthId && (
+          <Card className="">
             <CardHeader>
               <CardTitle>Contribution split</CardTitle>
               <CardDescription>
@@ -447,7 +410,7 @@ export function BudgieDetailClient() {
               </CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
-              <ContributionGrid budgieId={id} monthId={effectiveMonthId} />
+              <ContributionGrid budgieId={id} monthId={selectedMonthId} />
             </CardContent>
           </Card>
         )}
@@ -464,7 +427,7 @@ export function BudgieDetailClient() {
               <p className="font-medium">
                 Total costs: {formatMoney(totalCostAmount)}
               </p>
-              {contributorsList.map((contributor) => (
+              {contributors.map((contributor) => (
                 <p
                   key={contributor.id}
                   className="text-sm text-muted-foreground"

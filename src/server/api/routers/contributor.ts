@@ -24,6 +24,12 @@ export const contributorRouter = createTRPCRouter({
       return ctx.services.contributor.listForBudgie(input.budgieId);
     }),
 
+  isAdmin: protectedProcedure
+    .input(z.object({ budgieId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.services.contributor.isAdmin(input.budgieId, ctx.auth.userId);
+    }),
+
   add: protectedProcedure
     .input(
       z
@@ -31,6 +37,7 @@ export const contributorRouter = createTRPCRouter({
           budgieId: z.string(),
           name: z.string().min(1).max(200).optional(),
           userId: z.string().optional(),
+          isAdmin: z.boolean().optional(),
         })
         .refine((v) => v.name != null || v.userId != null, {
           message: "At least one of name or userId is required",

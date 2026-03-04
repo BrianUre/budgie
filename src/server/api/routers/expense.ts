@@ -23,29 +23,20 @@ export const expenseRouter = createTRPCRouter({
     .input(
       z.object({
         budgieId: z.string(),
+        monthId: z.string(),
         name: z.string().min(1).max(200),
         initialAmount: z.number().min(0),
-        year: z.number().optional(),
-        month: z.number().min(1).max(12).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
-      const now = new Date();
-      const year = input.year ?? now.getFullYear();
-      const month = input.month ?? now.getMonth() + 1;
-      const monthRow = await ctx.services.month.getOrCreateForBudgie(
-        input.budgieId,
-        year,
-        month
-      );
       return ctx.services.expense.create(
         {
           budgieId: input.budgieId,
           name: input.name,
           initialAmount: input.initialAmount,
         },
-        monthRow.id
+        input.monthId
       );
     }),
 });

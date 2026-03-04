@@ -23,8 +23,7 @@ CREATE TABLE "budgies" (
 CREATE TABLE "months" (
     "id" TEXT NOT NULL,
     "budgieId" TEXT NOT NULL,
-    "year" INTEGER NOT NULL,
-    "month" INTEGER NOT NULL,
+    "date" DATE NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -115,7 +114,7 @@ CREATE TABLE "notes" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "months_budgieId_year_month_key" ON "months"("budgieId", "year", "month");
+CREATE UNIQUE INDEX "months_budgieId_date_key" ON "months"("budgieId", "date");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "costs_monthId_expenseId_key" ON "costs"("monthId", "expenseId");

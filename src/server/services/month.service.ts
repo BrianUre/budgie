@@ -1,5 +1,9 @@
 import type { PrismaClient } from "@prisma/client";
 
+function firstDayOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
 export class MonthService {
   constructor(private readonly db: PrismaClient) {}
 
@@ -12,26 +16,28 @@ export class MonthService {
   async listForBudgie(budgieId: string) {
     return this.db.month.findMany({
       where: { budgieId },
-      orderBy: [{ year: "desc" }, { month: "desc" }],
+      orderBy: { date: "desc" },
     });
   }
 
-  async getOrCreateForBudgie(budgieId: string, year: number, month: number) {
+  async getOrCreateForBudgie(budgieId: string, date: Date) {
+    const normalized = firstDayOfMonth(date);
     const existing = await this.db.month.findUnique({
       where: {
-        budgieId_year_month: { budgieId, year, month },
+        budgieId_date: { budgieId, date: normalized },
       },
     });
     if (existing) return existing;
     return this.db.month.create({
-      data: { budgieId, year, month },
+      data: { budgieId, date: normalized },
     });
   }
 
-  async getByBudgieAndYearMonth(budgieId: string, year: number, month: number) {
+  async getByBudgieAndDate(budgieId: string, date: Date) {
+    const normalized = firstDayOfMonth(date);
     return this.db.month.findUnique({
       where: {
-        budgieId_year_month: { budgieId, year, month },
+        budgieId_date: { budgieId, date: normalized },
       },
     });
   }

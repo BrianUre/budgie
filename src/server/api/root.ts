@@ -1,5 +1,4 @@
 import { createTRPCRouter } from "@/server/api/trpc";
-import { adminRouter } from "@/server/api/routers/admin";
 import { budgieRouter } from "@/server/api/routers/budgie";
 import { contributionRouter } from "@/server/api/routers/contribution";
 import { contributorRouter } from "@/server/api/routers/contributor";
@@ -13,7 +12,6 @@ export const appRouter = createTRPCRouter({
   expense: expenseRouter,
   cost: costRouter,
   contributor: contributorRouter,
-  admin: adminRouter,
   contribution: contributionRouter,
 });
 

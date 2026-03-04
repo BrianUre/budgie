@@ -23,10 +23,7 @@ export const monthRouter = createTRPCRouter({
     .input(z.object({ budgieId: z.string(), year: z.number(), month: z.number().min(1).max(12) }))
     .mutation(async ({ ctx, input }) => {
       await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
-      return ctx.services.month.getOrCreateForBudgie(
-        input.budgieId,
-        input.year,
-        input.month
-      );
+      const date = new Date(input.year, input.month - 1, 1);
+      return ctx.services.month.getOrCreateForBudgie(input.budgieId, date);
     }),
 });
