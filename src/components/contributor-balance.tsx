@@ -9,12 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatMoney } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 
 export function ContributorBalance({
   budgieId,
   monthId,
   contributors,
+  className,
 }: {
   budgieId: string;
   monthId: string | null;
@@ -23,6 +24,7 @@ export function ContributorBalance({
     name: string | null;
     user?: { email: string } | null;
   }>;
+  className?: string;
 }) {
   const { data: costs = [] } = api.cost.listForMonth.useQuery(
     { monthId: monthId!, budgieId },
@@ -70,7 +72,7 @@ export function ContributorBalance({
 
   if (!monthId) {
     return (
-      <Card>
+      <Card className={cn(className)}>
         <CardHeader>
           <CardTitle>Totals</CardTitle>
           <CardDescription>
@@ -88,7 +90,7 @@ export function ContributorBalance({
   }
 
   return (
-    <Card>
+    <Card className={cn(className)}>
       <CardHeader>
         <CardTitle>Totals</CardTitle>
         <CardDescription>

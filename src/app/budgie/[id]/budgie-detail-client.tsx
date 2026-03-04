@@ -92,22 +92,18 @@ export function BudgieDetailClient() {
             budgieId={id}
             selectedMonthId={selectedMonthId}
             isAdmin={isAdmin}
+            className="lg:row-span-2"
           />
-          <ContributorsList
-            budgieId={id}
-            contributors={contributors}
-            isAdmin={isAdmin}
-          />
+          {contributors.length > 0 && !!selectedMonthId && (
+            <ContributionsView budgieId={id} monthId={selectedMonthId} />
+          )}
+          <ContributorBalance budgieId={id} monthId={selectedMonthId} contributors={contributors} />
         </div>
 
-        {contributors.length > 0 && !!selectedMonthId && (
-          <ContributionsView budgieId={id} monthId={selectedMonthId} />
-        )}
-
-        <ContributorBalance
+        <ContributorsList
           budgieId={id}
-          monthId={selectedMonthId}
           contributors={contributors}
+          isAdmin={isAdmin}
         />
       </div>
     </main>

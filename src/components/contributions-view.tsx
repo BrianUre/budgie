@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { api } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -152,12 +153,14 @@ function ContributionGrid({
 export function ContributionsView({
   budgieId,
   monthId,
+  className,
 }: {
   budgieId: string;
   monthId: string;
+  className?: string;
 }) {
   return (
-    <Card>
+    <Card className={cn(className)}>
       <CardHeader>
         <CardTitle>Contribution split</CardTitle>
         <CardDescription>

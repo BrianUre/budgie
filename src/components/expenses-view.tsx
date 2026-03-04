@@ -22,7 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { formatMoney } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import { Pencil, Plus } from "lucide-react";
 
 function CostEdit({
@@ -126,10 +126,12 @@ export function ExpensesView({
   budgieId,
   selectedMonthId,
   isAdmin,
+  className,
 }: {
   budgieId: string;
   selectedMonthId: string | null;
   isAdmin: boolean;
+  className?: string;
 }) {
   const utils = api.useUtils();
   const { data: expenses = [] } = api.expense.list.useQuery(
@@ -178,7 +180,7 @@ export function ExpensesView({
   });
 
   return (
-    <Card>
+    <Card className={cn(className)}>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Expenses</CardTitle>
