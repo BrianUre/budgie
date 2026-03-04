@@ -9,10 +9,8 @@ import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { MonthSelector } from "@/components/month-selector";
-import { ExpensesView } from "@/components/expenses-view";
+import { BudgieView } from "@/components/budgie-view";
 import { ContributorsList } from "@/components/contributors-list";
-import { ContributionsView } from "@/components/contributions-view";
-import { ContributorBalance } from "@/components/contributor-balance";
 
 export function BudgieDetailClient() {
   const params = useParams();
@@ -87,18 +85,12 @@ export function BudgieDetailClient() {
           onSelectMonth={setSelectedMonthId}
         />
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <ExpensesView
-            budgieId={id}
-            selectedMonthId={selectedMonthId}
-            isAdmin={isAdmin}
-            className="lg:row-span-2"
-          />
-          {contributors.length > 0 && !!selectedMonthId && (
-            <ContributionsView budgieId={id} monthId={selectedMonthId} />
-          )}
-          <ContributorBalance budgieId={id} monthId={selectedMonthId} contributors={contributors} />
-        </div>
+        <BudgieView
+          budgieId={id}
+          selectedMonthId={selectedMonthId}
+          isAdmin={isAdmin}
+          contributors={contributors}
+        />
 
         <ContributorsList
           budgieId={id}
