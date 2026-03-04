@@ -98,10 +98,6 @@ export function BudgieDetailClient() {
       void utils.contributor.list.invalidate({ budgieId: id });
     },
   });
-  const selectedMonth = useMemo(
-    () => months.find((month) => month.id === selectedMonthId),
-    [months, selectedMonthId]
-  );
 
   const contributionsByCost = useMemo(() => {
     const map = new Map<string, typeof contributionsForMonth>();
@@ -229,7 +225,7 @@ export function BudgieDetailClient() {
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
+           <Card className="b-dev">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Expenses</CardTitle>
