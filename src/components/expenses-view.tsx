@@ -152,6 +152,7 @@ export function ExpensesView({
   const expenseMutation = api.expense.create.useMutation({
     onSuccess: () => {
       void utils.expense.list.invalidate({ budgieId });
+      void utils.contribution.listForMonth.invalidate({ monthId: selectedMonthId! });
       if (selectedMonthId) {
         void utils.cost.listForMonth.invalidate({ monthId: selectedMonthId });
       }

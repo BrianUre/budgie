@@ -48,6 +48,7 @@ function ContributionGrid({
 
   const costColumns = useMemo(() => {
     const byId = new Map<string, { costId: string; name: string }>();
+    console.log("contributions", contributions);
     for (const contribution of contributions) {
       if (
         contribution.costId &&
@@ -60,6 +61,7 @@ function ContributionGrid({
         });
       }
     }
+    console.log("byId", byId);
     return Array.from(byId.values());
   }, [contributions]);
 
@@ -103,7 +105,7 @@ function ContributionGrid({
         {contributors.map((contributor) => (
           <TableRow key={contributor.id}>
             <TableCell className="font-medium">
-              {contributor.user?.email ?? contributor.name}
+              {contributor.user?.name ?? contributor.name}
             </TableCell>
             {costColumns.map((column) => {
               const contribution = getContribution(
