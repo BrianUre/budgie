@@ -4,6 +4,13 @@ import { useMemo } from "react";
 import { api } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Table,
   TableBody,
   TableCell,
@@ -12,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export function ContributionGrid({
+function ContributionGrid({
   budgieId,
   monthId,
 }: {
@@ -139,5 +146,27 @@ export function ContributionGrid({
         ))}
       </TableBody>
     </Table>
+  );
+}
+
+export function ContributionsView({
+  budgieId,
+  monthId,
+}: {
+  budgieId: string;
+  monthId: string;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Contribution split</CardTitle>
+        <CardDescription>
+          Set each contributor&apos;s share per cost (percentages sum to 100%).
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="overflow-x-auto">
+        <ContributionGrid budgieId={budgieId} monthId={monthId} />
+      </CardContent>
+    </Card>
   );
 }
