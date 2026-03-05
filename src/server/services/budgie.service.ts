@@ -12,13 +12,9 @@ export class BudgieService {
     });
   }
 
-  async create(
-    data: { name: string },
-    userId: string
-  ) {
+  async create(data: { name: string }, userId: string) {
     const now = new Date();
-    const date = new Date(now.getFullYear(), now.getMonth(), 1);
-
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     return this.db.$transaction(async (tx) => {
       const budgie = await tx.budgie.create({
         data: { name: data.name },

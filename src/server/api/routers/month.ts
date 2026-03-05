@@ -26,4 +26,22 @@ export const monthRouter = createTRPCRouter({
       const date = new Date(input.year, input.month - 1, 1);
       return ctx.services.month.getOrCreateForBudgie(input.budgieId, date);
     }),
+
+  createNext: protectedProcedure
+    .input(z.object({ budgieId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
+      return ctx.services.month.createNextForBudgie(input.budgieId);
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ monthId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const month = await ctx.services.month.getById(input.monthId);
+      if (!month)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Month not found" });
+      await requireBudgieAdmin(ctx.services, month.budgieId, ctx.auth.userId);
+      await ctx.services.month.delete(input.monthId);
+      return { ok: true };
+    }),
 });
