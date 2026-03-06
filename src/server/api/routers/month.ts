@@ -15,7 +15,6 @@ export const monthRouter = createTRPCRouter({
   list: protectedProcedure
     .input(z.object({ budgieId: z.string() }))
     .query(async ({ ctx, input }) => {
-      await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
       return ctx.services.month.listForBudgie(input.budgieId);
     }),
 

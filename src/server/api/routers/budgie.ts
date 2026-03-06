@@ -18,8 +18,6 @@ export const budgieRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const budgie = await ctx.services.budgie.getById(input.id);
       if (!budgie) throw new TRPCError({ code: "NOT_FOUND", message: "Budgie not found" });
-      const isAdmin = await ctx.services.contributor.isAdmin(budgie.id, ctx.auth.userId);
-      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN", message: "Not an admin of this budgie" });
       return budgie;
     }),
 });

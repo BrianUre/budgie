@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
@@ -123,7 +123,6 @@ function ContributionCell({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
-
   const utils = api.useUtils();
   const setPercentageMutation = api.contribution.setPercentage.useMutation({
     onSuccess: () => {
@@ -136,6 +135,7 @@ function ContributionCell({
   const amount = costAmount * (percentage / 100);
 
   const handleSave = async () => {
+    console.log("draft", draft);
     const value = parseFloat(draft);
     if (
       !Number.isNaN(value) &&
@@ -151,14 +151,13 @@ function ContributionCell({
       setEditing(false);
     }
   };
-
-  const canEdit = isAdmin && !!contribution;
+console.log("contribution", contribution);
 
   return (
     <div>
     <div className="grid max-w-48 grid-cols-2 justify-items-end gap-4">
       <span className="font-mono text-2xl">{formatMoney(amount)}</span>
-      {canEdit && editing ? (
+      {isAdmin && editing ? (
         <span className="flex items-center gap-1">
           <Input
             type="number"
@@ -184,12 +183,12 @@ function ContributionCell({
       ) : (
         <span
           className={
-            canEdit
+            isAdmin
               ? "cursor-pointer text-xl hover:underline"
               : "text-muted-foreground text-xs"
           }
           onClick={
-            canEdit
+            isAdmin
               ? () => {
                   setDraft(String(percentage));
                   setEditing(true);
@@ -197,7 +196,7 @@ function ContributionCell({
               : undefined
           }
           onKeyDown={
-            canEdit
+            isAdmin
               ? (e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -207,8 +206,8 @@ function ContributionCell({
                 }
               : undefined
           }
-          role={canEdit ? "button" : undefined}
-          tabIndex={canEdit ? 0 : undefined}
+            role={isAdmin ? "button" : undefined}
+          tabIndex={isAdmin ? 0 : undefined}
         >
           {percentage}%
         </span>
@@ -323,8 +322,8 @@ function AddExpenseDialog({
 type CostRow = {
   id: string;
   amount: unknown;
-  expense?: { name: string } | null;
-  contributions?: Contribution[];
+  expense: { name: string } | null;
+  contributions: Contribution[];
 };
 
 function ExpensesTable({
@@ -349,6 +348,7 @@ function ExpensesTable({
       });
     },
   });
+  console.log("costs", costs);
 
   return (
     <Table>
@@ -377,7 +377,7 @@ function ExpensesTable({
               <TableCell className="font-medium text-2xl">
                 {cost.expense?.name ?? "—"}
               </TableCell>
-              <TableCell className="font-mono">
+              <TableCell className="font-mono text-2xl">
                 {isAdmin ? (
                   <CostEdit
                     value={Number(cost.amount)}
@@ -399,8 +399,8 @@ function ExpensesTable({
                   <ContributionCell
                     costId={cost.id}
                     costAmount={Number(cost.amount)}
-                    contribution={(cost.contributions ?? []).find(
-                      (ct: Contribution) => ct.contributorId === contributor.id
+                    contribution={cost.contributions.find(
+                      (contribution: Contribution) => contribution.contributorId === contributor.id
                     )}
                     isAdmin={isAdmin}
                     monthId={selectedMonthId}

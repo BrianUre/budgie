@@ -6,45 +6,6 @@ import {
   publicProcedure,
 } from "@/server/api/trpc";
 
-async function createForBudgieHandler(opts: {
-  ctx: { services: { budgie: { getById: (id: string) => Promise<{ name: string } | null> }; contributor: { isAdmin: (a: string, b: string) => Promise<boolean> }; invitation: { createForBudgie: (a: string, b: string, c: string, d?: string) => Promise<{ token: string }>; buildInvitationUrl: (t: string) => string }; user: { getById: (id: string) => Promise<{ name: string | null; email: string } | null> }; email: { sendBudgieInvitation: (to: string, p: { hostName: string; budgieName: string; invitationLink: string }) => Promise<void> } }; auth: { userId: string } };
-  input: { budgieId: string; inviteeEmail: string; invitationMessage?: string };
-}) {
-  const { ctx, input } = opts;
-  const budgie = await ctx.services.budgie.getById(input.budgieId);
-  if (!budgie) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Budgie not found",
-    });
-  }
-  const isAdmin = await ctx.services.contributor.isAdmin(
-    input.budgieId,
-    ctx.auth.userId
-  );
-  if (!isAdmin) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Not an admin of this budgie",
-    });
-  }
-  const { token } = await ctx.services.invitation.createForBudgie(
-    input.budgieId,
-    input.inviteeEmail,
-    ctx.auth.userId,
-    input.invitationMessage
-  );
-  const invitationLink = ctx.services.invitation.buildInvitationUrl(token);
-  const user = await ctx.services.user.getById(ctx.auth.userId);
-  const hostName = user?.name ?? user?.email ?? "Someone";
-  await ctx.services.email.sendBudgieInvitation(input.inviteeEmail, {
-    hostName,
-    budgieName: budgie.name,
-    invitationLink,
-  });
-  return { sent: true };
-}
-
 export const invitationRouter = createTRPCRouter({
   getByToken: publicProcedure
     .input(z.object({ token: z.string().min(1) }))
@@ -121,5 +82,38 @@ export const invitationRouter = createTRPCRouter({
         invitationMessage: z.string().optional(),
       })
     )
-    .mutation(createForBudgieHandler),
+    .mutation(async ({ ctx, input }) => {
+      const budgie = await ctx.services.budgie.getById(input.budgieId);
+      if (!budgie) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Budgie not found",
+        });
+      }
+      const isAdmin = await ctx.services.contributor.isAdmin(
+        input.budgieId,
+        ctx.auth.userId
+      );
+      if (!isAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not an admin of this budgie",
+        });
+      }
+      const { token } = await ctx.services.invitation.createForBudgie(
+        input.budgieId,
+        input.inviteeEmail,
+        ctx.auth.userId,
+        input.invitationMessage
+      );
+      const invitationLink = ctx.services.invitation.buildInvitationUrl(token);
+      const user = await ctx.services.user.getById(ctx.auth.userId);
+      const hostName = user?.name ?? user?.email ?? "Someone";
+      await ctx.services.email.sendBudgieInvitation(input.inviteeEmail, {
+        hostName,
+        budgieName: budgie.name,
+        invitationLink,
+      });
+      return { sent: true };
+    }),
 });

@@ -6,7 +6,7 @@ export class BudgieService {
   async listForUser(userId: string) {
     return this.db.budgie.findMany({
       where: {
-        contributors: { some: { userId, isAdmin: true } },
+        contributors: { some: { userId } },
       },
       orderBy: { updatedAt: "desc" },
     });

@@ -11,7 +11,7 @@ export class EmailService {
   ) {
     this.resend = resendClient ?? new Resend(process.env.RESEND_API_KEY);
     this.from =
-      process.env.EMAIL_FROM ?? "Budgie <onboarding@resend.dev>";
+      process.env.EMAIL_FROM ?? "Budgie <invitations@budgie.brianure.com>";
   }
 
   async sendBudgieInvitation(
@@ -20,11 +20,13 @@ export class EmailService {
   ): Promise<void> {
     const { html } = this.contentService.render("sendBudgieInvitation", params);
     const subject = `You're invited to ${params.budgieName}`;
-    await this.resend.emails.send({
+    console.log("Sending email to", to, "with subject", subject, "and html", html);
+    const result = await this.resend.emails.send({
       from: this.from,
       to,
       subject,
       html,
     });
+    console.log("Email sent result:", result);
   }
 }
