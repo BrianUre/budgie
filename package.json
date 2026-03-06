@@ -36,6 +36,8 @@
     "react-dom": "^18.3.0",
     "superjson": "^2.2.1",
     "svix": "^1.86.0",
+    "handlebars": "^4.7.8",
+    "resend": "^4.0.0",
     "tailwind-merge": "^2.5.0",
     "zod": "^3.23.0"
   },

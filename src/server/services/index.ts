@@ -3,11 +3,15 @@ import { BudgieService } from "./budgie.service";
 import { ContributionService } from "./contribution.service";
 import { ContributorService } from "./contributor.service";
 import { CostService } from "./cost.service";
+import { EmailContentService } from "./email-content.service";
+import { EmailService } from "./email.service";
 import { ExpenseService } from "./expense.service";
 import { MonthService } from "./month.service";
 import { UserService } from "./user.service";
 
 export function createServices(db: PrismaClient) {
+  const emailContent = new EmailContentService();
+  const email = new EmailService(emailContent);
   return {
     budgie: new BudgieService(db),
     month: new MonthService(db),
@@ -16,6 +20,8 @@ export function createServices(db: PrismaClient) {
     contributor: new ContributorService(db),
     contribution: new ContributionService(db),
     user: new UserService(db),
+    emailContent,
+    email,
   };
 }
 
@@ -26,6 +32,8 @@ export { ContributionService } from "./contribution.service";
 export type { ContributionInput } from "./contribution.service";
 export { ContributorService } from "./contributor.service";
 export { CostService } from "./cost.service";
+export { EmailContentService } from "./email-content.service";
+export { EmailService } from "./email.service";
 export { ExpenseService } from "./expense.service";
 export { MonthService } from "./month.service";
 export { UserService } from "./user.service";
