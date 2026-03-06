@@ -160,3 +160,29 @@ ALTER TABLE "notes" ADD CONSTRAINT "notes_monthId_fkey" FOREIGN KEY ("monthId") 
 
 -- AddForeignKey
 ALTER TABLE "notes" ADD CONSTRAINT "notes_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- CreateTable
+CREATE TABLE "invitations" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "invitedById" TEXT NOT NULL,
+    "budgieId" TEXT NOT NULL,
+    "accepted" BOOLEAN NOT NULL DEFAULT false,
+    "resolved" BOOLEAN NOT NULL DEFAULT false,
+    "tokenHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "invitationMessage" TEXT NOT NULL DEFAULT '',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "invitations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "invitations_tokenHash_key" ON "invitations"("tokenHash");
+
+-- AddForeignKey
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_invitedById_fkey" FOREIGN KEY ("invitedById") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_budgieId_fkey" FOREIGN KEY ("budgieId") REFERENCES "budgies"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -17,9 +17,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  contributors  Contributor[]
-  payments      Payment[]
-  notes         Note[] @relation("NoteCreator")
+  contributors     Contributor[]
+  payments         Payment[]
+  notes            Note[]       @relation("NoteCreator")
+  invitationsSent  Invitation[] @relation("InvitationInvitedBy")
 
   @@map("users")
 }
@@ -33,6 +34,7 @@ model Budgie {
   months       Month[]
   expenses     Expense[]
   contributors Contributor[]
+  invitations  Invitation[]
 
   @@map("budgies")
 }
@@ -152,4 +154,23 @@ model Note {
   createdBy  User  @relation("NoteCreator", fields: [createdById], references: [id], onDelete: Cascade)
 
   @@map("notes")
+}
+
+model Invitation {
+  id               String   @id @default(uuid())
+  email            String
+  invitedById     String
+  budgieId        String
+  accepted        Boolean  @default(false)
+  resolved        Boolean  @default(false)
+  tokenHash       String   @unique
+  expiresAt       DateTime
+  invitationMessage String  @default("") @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  budgie   Budgie @relation(fields: [budgieId], references: [id], onDelete: Cascade)
+  invitedBy User  @relation("InvitationInvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@map("invitations")
 }

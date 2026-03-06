@@ -6,6 +6,7 @@ import { CostService } from "./cost.service";
 import { EmailContentService } from "./email-content.service";
 import { EmailService } from "./email.service";
 import { ExpenseService } from "./expense.service";
+import { InvitationService } from "./invitation.service";
 import { MonthService } from "./month.service";
 import { UserService } from "./user.service";
 
@@ -20,6 +21,7 @@ export function createServices(db: PrismaClient) {
     contributor: new ContributorService(db),
     contribution: new ContributionService(db),
     user: new UserService(db),
+    invitation: new InvitationService(db),
     emailContent,
     email,
   };
@@ -35,5 +37,6 @@ export { CostService } from "./cost.service";
 export { EmailContentService } from "./email-content.service";
 export { EmailService } from "./email.service";
 export { ExpenseService } from "./expense.service";
+export { InvitationService } from "./invitation.service";
 export { MonthService } from "./month.service";
 export { UserService } from "./user.service";
