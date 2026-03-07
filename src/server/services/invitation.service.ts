@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 import { createHash, randomBytes } from "crypto";
 
 const DEFAULT_EXPIRY_HOURS = 48;
@@ -85,7 +86,7 @@ export class InvitationService {
     const name = user?.name ?? user?.email ?? "Contributor";
 
     await this.db.$transaction(async (tx) => {
-      await tx.contributor.create({
+      const newContributor = await tx.contributor.create({
         data: {
           budgieId: invitation.budgieId,
           name,
@@ -93,6 +94,21 @@ export class InvitationService {
           isAdmin: false,
         },
       });
+
+      const costs = await tx.cost.findMany({
+        where: { month: { budgieId: invitation.budgieId } },
+      });
+
+      if (costs.length > 0) {
+        await tx.contribution.createMany({
+          data: costs.map((cost) => ({
+            costId: cost.id,
+            contributorId: newContributor.id,
+            percentage: new Decimal(0),
+          })),
+        });
+      }
+
       await tx.invitation.update({
         where: { id: invitation.id },
         data: { accepted: true, resolved: true },
