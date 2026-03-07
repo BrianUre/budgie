@@ -80,12 +80,18 @@ export function CreateBudgieDialog({
             </form.Field>
           </div>
           <DialogFooter>
-            <Button
-              type="submit"
-              disabled={createBudgie.isPending || !form.state.values.name.trim()}
+            <form.Subscribe
+              selector={(state): [string, boolean] => [
+                state.values.name,
+                state.isSubmitting,
+              ]}
             >
-              {createBudgie.isPending ? "Creating…" : "Create"}
-            </Button>
+              {([name, isSubmitting]) => (
+                <Button type="submit" disabled={isSubmitting || !name.trim()}>
+                  {isSubmitting ? "Creating…" : "Create"}
+                </Button>
+              )}
+            </form.Subscribe>
           </DialogFooter>
         </form>
       </DialogContent>
