@@ -39,4 +39,17 @@ export const expenseRouter = createTRPCRouter({
         input.monthId
       );
     }),
+
+  archive: protectedProcedure
+    .input(
+      z.object({
+        expenseId: z.string(),
+        budgieId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
+      await ctx.services.expense.archive(input.expenseId);
+      return { ok: true };
+    }),
 });

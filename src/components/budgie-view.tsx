@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useForm } from "@tanstack/react-form";
+import { useMemo, useState } from "react";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -14,15 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -30,8 +19,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ManageExpensesDialog } from "@/components/manage-expenses-dialog";
 import { cn, formatMoney } from "@/lib/utils";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 type Contributor = {
   id: string;
@@ -217,108 +207,6 @@ console.log("contribution", contribution);
   );
 }
 
-function AddExpenseDialog({
-  budgieId,
-  selectedMonthId,
-}: {
-  budgieId: string;
-  selectedMonthId: string | null;
-}) {
-  const utils = api.useUtils();
-  const expenseMutation = api.expense.create.useMutation({
-    onSuccess: () => {
-      void utils.expense.list.invalidate({ budgieId });
-      if (selectedMonthId) {
-        void utils.contribution.listForMonth.invalidate({
-          monthId: selectedMonthId,
-        });
-        void utils.cost.listForMonth.invalidate({
-          monthId: selectedMonthId,
-          budgieId,
-        });
-      }
-    },
-  });
-
-  const expenseForm = useForm({
-    defaultValues: { name: "", initialAmount: 0 },
-    onSubmit: async ({ value }) => {
-      if (!selectedMonthId) return;
-      await expenseMutation.mutateAsync({
-        budgieId,
-        monthId: selectedMonthId,
-        name: value.name,
-        initialAmount: value.initialAmount,
-      });
-    },
-  });
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button size="sm" disabled={!selectedMonthId}>
-          <Plus className="h-4 w-4" />
-          Add
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            expenseForm.handleSubmit();
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>Add expense</DialogTitle>
-            <DialogDescription>
-              Name and initial cost for the selected month.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <expenseForm.Field name="name">
-              {(field) => (
-                <div className="grid gap-2">
-                  <Label>Name</Label>
-                  <Input
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="e.g. Rent"
-                  />
-                </div>
-              )}
-            </expenseForm.Field>
-            <expenseForm.Field name="initialAmount">
-              {(field) => (
-                <div className="grid gap-2">
-                  <Label>Initial amount</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={field.state.value || ""}
-                    onChange={(e) =>
-                      field.handleChange(parseFloat(e.target.value) || 0)
-                    }
-                  />
-                </div>
-              )}
-            </expenseForm.Field>
-          </div>
-          <DialogFooter>
-            <Button
-              type="submit"
-              disabled={!selectedMonthId || expenseMutation.isPending}
-            >
-              {expenseMutation.isPending ? "Adding…" : "Add"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 type CostRow = {
   id: string;
   amount: unknown;
@@ -348,7 +236,6 @@ function ExpensesTable({
       });
     },
   });
-  console.log("costs", costs);
 
   return (
     <Table>
@@ -497,9 +384,13 @@ export function BudgieView({
   contributors: Contributor[];
   className?: string;
 }) {
-  const { data: costs = [] } = api.cost.listForMonth.useQuery(
+  const { data: costsForMonth = [] } = api.cost.listForMonth.useQuery(
     { monthId: selectedMonthId!, budgieId },
     { enabled: !!selectedMonthId }
+  );
+  const activeCosts = useMemo(
+    () => costsForMonth.filter((cost) => cost.isActive),
+    [costsForMonth]
   );
 
   if (!selectedMonthId) {
@@ -533,7 +424,7 @@ export function BudgieView({
             </CardDescription>
           </div>
           {isAdmin && (
-            <AddExpenseDialog
+            <ManageExpensesDialog
               budgieId={budgieId}
               selectedMonthId={selectedMonthId}
             />
@@ -541,7 +432,7 @@ export function BudgieView({
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <ExpensesTable
-            costs={costs}
+            costs={activeCosts}
             contributors={contributors}
             isAdmin={isAdmin}
             budgieId={budgieId}
@@ -551,7 +442,7 @@ export function BudgieView({
       </Card>
 
       {contributors.length > 0 && (
-        <TotalsPanel contributors={contributors} costs={costs} />
+        <TotalsPanel contributors={contributors} costs={activeCosts} />
       )}
     </div>
   );

@@ -27,10 +27,26 @@ export const monthRouter = createTRPCRouter({
     }),
 
   createNext: protectedProcedure
-    .input(z.object({ budgieId: z.string() }))
+    .input(
+      z.object({
+        budgieId: z.string(),
+        costOverrides: z
+          .array(
+            z.object({
+              expenseId: z.string(),
+              isActive: z.boolean(),
+              amount: z.number().min(0),
+            })
+          )
+          .optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
-      return ctx.services.month.createNextForBudgie(input.budgieId);
+      return ctx.services.month.createNextForBudgie(
+        input.budgieId,
+        input.costOverrides
+      );
     }),
 
   delete: protectedProcedure

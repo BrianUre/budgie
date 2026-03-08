@@ -29,4 +29,57 @@ export const costRouter = createTRPCRouter({
 
       return ctx.services.cost.updateAmount(input.costId, input.amount);
     }),
+
+  setActive: protectedProcedure
+    .input(
+      z.object({
+        costId: z.string(),
+        isActive: z.boolean(),
+        budgieId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const isAdmin = await ctx.services.contributor.isAdmin(
+        input.budgieId,
+        ctx.auth.userId
+      );
+      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+
+      return ctx.services.cost.setActive(input.costId, input.isActive);
+    }),
+
+  createForMonth: protectedProcedure
+    .input(
+      z.object({
+        monthId: z.string(),
+        expenseId: z.string(),
+        amount: z.number().min(0),
+        budgieId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const isAdmin = await ctx.services.contributor.isAdmin(
+        input.budgieId,
+        ctx.auth.userId
+      );
+      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const month = await ctx.services.month.getById(input.monthId);
+      if (!month || month.budgieId !== input.budgieId)
+        throw new TRPCError({ code: "NOT_FOUND" });
+
+      const expense = await ctx.services.expense.listForBudgie(input.budgieId);
+      const expenseBelongsToBudgie = expense.some(
+        (exp) => exp.id === input.expenseId
+      );
+      if (!expenseBelongsToBudgie)
+        throw new TRPCError({ code: "NOT_FOUND" });
+
+      return ctx.services.cost.createForMonth(
+        input.monthId,
+        input.expenseId,
+        input.amount,
+        input.budgieId
+      );
+    }),
 });

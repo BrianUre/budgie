@@ -1,13 +1,45 @@
 import type { PrismaClient } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 
+function firstDayOfMonth(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1)
+  );
+}
+
 export class ExpenseService {
   constructor(private readonly db: PrismaClient) {}
 
-  async listForBudgie(budgieId: string) {
+  async listForBudgie(
+    budgieId: string,
+    options?: { includeArchived?: boolean }
+  ) {
+    const includeArchived = options?.includeArchived ?? false;
     return this.db.expense.findMany({
-      where: { budgieId },
+      where: {
+        budgieId,
+        ...(includeArchived ? {} : { archived: false }),
+      },
       orderBy: { name: "asc" },
+    });
+  }
+
+  async archive(expenseId: string) {
+    const expense = await this.db.expense.findUnique({
+      where: { id: expenseId },
+      include: { costs: true },
+    });
+    if (!expense) return;
+
+    if (expense.costs.length === 0) {
+      await this.db.expense.delete({ where: { id: expenseId } });
+      return;
+    }
+
+    const archivedOn = firstDayOfMonth(new Date());
+    await this.db.expense.update({
+      where: { id: expenseId },
+      data: { archived: true, archivedOn },
     });
   }
 
@@ -27,6 +59,7 @@ export class ExpenseService {
           monthId,
           expenseId: expense.id,
           amount: new Decimal(data.initialAmount),
+          isActive: true,
         },
       });
 

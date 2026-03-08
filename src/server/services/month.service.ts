@@ -1,10 +1,17 @@
 import type { PrismaClient } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 
 function firstDayOfMonth(date: Date): Date {
   return new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1)
   );
 }
+
+export type CostOverride = {
+  expenseId: string;
+  isActive: boolean;
+  amount: number;
+};
 
 export class MonthService {
   constructor(private readonly db: PrismaClient) {}
@@ -44,7 +51,10 @@ export class MonthService {
     });
   }
 
-  async createNextForBudgie(budgieId: string) {
+  async createNextForBudgie(
+    budgieId: string,
+    costOverrides?: CostOverride[]
+  ) {
     const months = await this.listForBudgie(budgieId);
     const baseDate =
       months.length > 0
@@ -59,7 +69,9 @@ export class MonthService {
     );
     const newMonth = await this.getOrCreateForBudgie(budgieId, nextDate);
 
-    if (months.length > 0) {
+    if (costOverrides && costOverrides.length > 0) {
+      await this.createCostsFromOverrides(budgieId, newMonth.id, costOverrides);
+    } else if (months.length > 0) {
       const sourceMonthId = months[0]!.id;
       await this.duplicateCostsAndContributionsFromMonth(
         sourceMonthId,
@@ -68,6 +80,67 @@ export class MonthService {
     }
 
     return newMonth;
+  }
+
+  /**
+   * Create costs for the new month from explicit overrides (isActive + amount).
+   * Copies contribution percentages from the latest month's cost per expense when available.
+   */
+  private async createCostsFromOverrides(
+    budgieId: string,
+    targetMonthId: string,
+    costOverrides: CostOverride[]
+  ) {
+    const months = await this.listForBudgie(budgieId);
+    const sourceMonthId = months[0]?.id ?? null;
+    const sourceCosts = sourceMonthId
+      ? await this.db.cost.findMany({
+          where: { monthId: sourceMonthId },
+          include: { contributions: true },
+        })
+      : [];
+    const contributors = await this.db.contributor.findMany({
+      where: { budgieId },
+    });
+
+    await this.db.$transaction(async (tx) => {
+      for (const override of costOverrides) {
+        const newCost = await tx.cost.create({
+          data: {
+            monthId: targetMonthId,
+            expenseId: override.expenseId,
+            amount: new Decimal(override.amount),
+            isActive: override.isActive,
+          },
+        });
+        const sourceCost = sourceCosts.find(
+          (cost) => cost.expenseId === override.expenseId
+        );
+        if (sourceCost?.contributions.length) {
+          await tx.contribution.createMany({
+            data: sourceCost.contributions.map((contribution) => ({
+              costId: newCost.id,
+              contributorId: contribution.contributorId,
+              percentage: contribution.percentage,
+            })),
+          });
+        } else if (contributors.length > 0) {
+          const contributorCount = contributors.length;
+          const basePercentage = Math.floor((100 / contributorCount) * 100) / 100;
+          const remainder =
+            Math.round((100 - basePercentage * contributorCount) * 100) / 100;
+          await tx.contribution.createMany({
+            data: contributors.map((contributor, index) => ({
+              costId: newCost.id,
+              contributorId: contributor.id,
+              percentage: new Decimal(
+                index === 0 ? basePercentage + remainder : basePercentage
+              ),
+            })),
+          });
+        }
+      }
+    });
   }
 
   /**
@@ -90,6 +163,7 @@ export class MonthService {
             monthId: targetMonthId,
             expenseId: cost.expenseId,
             amount: cost.amount,
+            isActive: cost.isActive,
           },
         });
         if (cost.contributions.length > 0) {

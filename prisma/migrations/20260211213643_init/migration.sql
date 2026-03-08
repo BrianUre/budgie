@@ -35,6 +35,8 @@ CREATE TABLE "expenses" (
     "id" TEXT NOT NULL,
     "budgieId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "archived" BOOLEAN NOT NULL DEFAULT false,
+    "archivedOn" DATE,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -47,6 +49,7 @@ CREATE TABLE "costs" (
     "monthId" TEXT NOT NULL,
     "expenseId" TEXT NOT NULL,
     "amount" DECIMAL(10,2) NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

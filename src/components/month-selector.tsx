@@ -18,8 +18,9 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import { CreateNextMonthDialog } from "@/components/create-next-month-dialog";
 import { formatMonth } from "@/lib/utils";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function firstDayOfMonth(d: Date): Date {
@@ -46,13 +47,6 @@ export function MonthSelector({
     { budgieId },
     { enabled: !!budgieId }
   );
-
-  const createNext = api.month.createNext.useMutation({
-    onSuccess: (newMonth) => {
-      void utils.month.list.invalidate({ budgieId });
-      onSelectMonth(newMonth.id);
-    },
-  });
 
   const deleteMonth = api.month.delete.useMutation({
     onSuccess: (_data, variables) => {
@@ -119,15 +113,10 @@ export function MonthSelector({
           <CardDescription>Select the month to view and edit.</CardDescription>
         </div>
         {isAdmin && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => createNext.mutate({ budgieId })}
-            disabled={createNext.isPending}
-          >
-            <Plus className="h-4 w-4" />
-            <span className="ml-2">Add next month</span>
-          </Button>
+          <CreateNextMonthDialog
+            budgieId={budgieId}
+            onSuccess={(newMonthId) => onSelectMonth(newMonthId)}
+          />
         )}
       </CardHeader>
       <CardContent>
@@ -158,7 +147,7 @@ export function MonthSelector({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructiv"
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDelete(
