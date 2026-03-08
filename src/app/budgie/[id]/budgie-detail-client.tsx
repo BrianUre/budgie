@@ -14,7 +14,7 @@ import { ContributorsList } from "@/components/contributors-list";
 
 export function BudgieDetailClient() {
   const params = useParams();
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, userId } = useAuth();
   const id = params.id as string;
 
   if (isLoaded && !isSignedIn) {
@@ -91,6 +91,7 @@ export function BudgieDetailClient() {
           selectedMonthId={selectedMonthId}
           isAdmin={isAdmin}
           contributors={contributors}
+          currentUserId={userId}
         />
 
         <ContributorsList

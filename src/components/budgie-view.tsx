@@ -28,6 +28,7 @@ import { Pencil } from "lucide-react";
 type Contributor = {
   id: string;
   name: string | null;
+  userId?: string | null;
   user?: { name?: string | null; email?: string | null } | null;
 };
 
@@ -105,6 +106,7 @@ function ContributionCell({
   isAdmin,
   monthId,
   budgieId,
+  isCurrentUser,
 }: {
   costId: string;
   costAmount: number;
@@ -112,6 +114,7 @@ function ContributionCell({
   isAdmin: boolean;
   monthId: string;
   budgieId: string;
+  isCurrentUser?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -148,7 +151,14 @@ console.log("contribution", contribution);
   return (
     <div>
     <div className="grid max-w-48 grid-cols-2 justify-items-end gap-4">
-      <span className="font-mono text-2xl">{formatMoney(amount)}</span>
+      <span
+        className={cn(
+          "font-mono text-2xl",
+          isCurrentUser && "text-primary font-semibold"
+        )}
+      >
+        {formatMoney(amount)}
+      </span>
       {isAdmin && editing ? (
         <span className="flex items-center gap-1">
           <Input
@@ -174,11 +184,12 @@ console.log("contribution", contribution);
         </span>
       ) : (
         <span
-          className={
+          className={cn(
             isAdmin
               ? "cursor-pointer text-xl hover:underline"
-              : "text-muted-foreground text-xs"
-          }
+              : "text-muted-foreground text-xs",
+            isCurrentUser && "text-primary font-semibold"
+          )}
           onClick={
             isAdmin
               ? () => {
@@ -222,12 +233,14 @@ function ExpensesTable({
   isAdmin,
   budgieId,
   selectedMonthId,
+  currentUserId,
 }: {
   costs: CostRow[];
   contributors: Contributor[];
   isAdmin: boolean;
   budgieId: string;
   selectedMonthId: string;
+  currentUserId?: string | null;
 }) {
   const utils = api.useUtils();
   const costMutation = api.cost.updateAmount.useMutation({
@@ -284,7 +297,14 @@ function ExpensesTable({
                 )}
               </TableCell>
               {contributors.map((contributor) => (
-                <TableCell key={contributor.id}>
+                <TableCell
+                  key={contributor.id}
+                  className={cn(
+                    currentUserId &&
+                      contributor.userId === currentUserId &&
+                      "bg-primary/5"
+                  )}
+                >
                   <ContributionCell
                     costId={cost.id}
                     costAmount={Number(cost.amount)}
@@ -294,6 +314,9 @@ function ExpensesTable({
                     isAdmin={isAdmin}
                     monthId={selectedMonthId}
                     budgieId={budgieId}
+                    isCurrentUser={
+                      !!currentUserId && contributor.userId === currentUserId
+                    }
                   />
                 </TableCell>
               ))}
@@ -310,12 +333,14 @@ export function BudgieView({
   selectedMonthId,
   isAdmin,
   contributors,
+  currentUserId,
   className,
 }: {
   budgieId: string;
   selectedMonthId: string | null;
   isAdmin: boolean;
   contributors: Contributor[];
+  currentUserId?: string | null;
   className?: string;
 }) {
   const { data: costsForMonth = [] } = api.cost.listForMonth.useQuery(
@@ -375,6 +400,7 @@ export function BudgieView({
             isAdmin={isAdmin}
             budgieId={budgieId}
             selectedMonthId={selectedMonthId}
+            currentUserId={currentUserId}
           />
         </CardContent>
       </Card>
@@ -384,6 +410,7 @@ export function BudgieView({
           contributors={contributors}
           costs={activeCosts}
           destinations={destinations}
+          currentUserId={currentUserId}
         />
       )}
 

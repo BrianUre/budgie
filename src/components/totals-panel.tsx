@@ -21,6 +21,7 @@ export type TotalsPanelCost = {
 export type TotalsPanelContributor = {
   id: string;
   name: string | null;
+  userId?: string | null;
   user?: { name?: string | null; email?: string | null } | null;
 };
 
@@ -33,6 +34,7 @@ interface TotalsPanelProps {
   contributors: TotalsPanelContributor[];
   costs: TotalsPanelCost[];
   destinations: Destination[];
+  currentUserId?: string | null;
   className?: string;
 }
 
@@ -44,6 +46,7 @@ export function TotalsPanel({
   contributors,
   costs,
   destinations,
+  currentUserId,
   className,
 }: TotalsPanelProps) {
   const totalCostAmount = useMemo(
@@ -138,7 +141,15 @@ export function TotalsPanel({
 
         {/* One item per contributor: contributor total + per destination */}
         {contributors.map((contributor) => (
-          <Card key={contributor.id} className="w-full">
+          <Card
+            key={contributor.id}
+            className={cn(
+              "w-full",
+              currentUserId &&
+                contributor.userId === currentUserId &&
+                "ring-2 ring-primary"
+            )}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-base">
                 {contributorDisplayName(contributor)}
