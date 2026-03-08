@@ -18,7 +18,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   contributors     Contributor[]
-  payments         Payment[]
   notes            Note[]       @relation("NoteCreator")
   invitationsSent  Invitation[] @relation("InvitationInvitedBy")
 
@@ -70,16 +69,18 @@ model Expense {
 }
 
 model Cost {
-  id        String   @id @default(uuid())
-  monthId   String
-  expenseId String
-  amount    Decimal  @db.Decimal(10, 2)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  monthId      String
+  expenseId    String
+  destinationId String?
+  amount        Decimal  @db.Decimal(10, 2)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  month      Month         @relation(fields: [monthId], references: [id], onDelete: Cascade)
-  expense    Expense       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  month       Month        @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  expense     Expense      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  destination Destination? @relation(fields: [destinationId], references: [id], onDelete: Cascade)
   contributions Contribution[]
 
   @@unique([monthId, expenseId])
@@ -124,6 +125,7 @@ model Destination {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  costs    Cost[]
   payments Payment[]
 
   @@map("destinations")
@@ -133,14 +135,12 @@ model Payment {
   id             String   @id @default(uuid())
   destinationId  String
   contributionId String
-  userId         String
   status         Int
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   destination  Destination  @relation(fields: [destinationId], references: [id], onDelete: Cascade)
   contribution Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }

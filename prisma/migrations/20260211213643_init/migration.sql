@@ -44,10 +44,21 @@ CREATE TABLE "expenses" (
 );
 
 -- CreateTable
+CREATE TABLE "destinations" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "destinations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "costs" (
     "id" TEXT NOT NULL,
     "monthId" TEXT NOT NULL,
     "expenseId" TEXT NOT NULL,
+    "destinationId" TEXT,
     "amount" DECIMAL(10,2) NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -82,21 +93,10 @@ CREATE TABLE "contributions" (
 );
 
 -- CreateTable
-CREATE TABLE "destinations" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "destinations_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "payments" (
     "id" TEXT NOT NULL,
-    "destinationId" TEXT NOT NULL,
+    "destinationId" TEXT,
     "contributionId" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
     "status" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -138,6 +138,9 @@ ALTER TABLE "costs" ADD CONSTRAINT "costs_monthId_fkey" FOREIGN KEY ("monthId") 
 ALTER TABLE "costs" ADD CONSTRAINT "costs_expenseId_fkey" FOREIGN KEY ("expenseId") REFERENCES "expenses"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "costs" ADD CONSTRAINT "costs_destinationId_fkey" FOREIGN KEY ("destinationId") REFERENCES "destinations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "contributors" ADD CONSTRAINT "contributors_budgieId_fkey" FOREIGN KEY ("budgieId") REFERENCES "budgies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -154,9 +157,6 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_destinationId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_contributionId_fkey" FOREIGN KEY ("contributionId") REFERENCES "contributions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "payments" ADD CONSTRAINT "payments_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "notes" ADD CONSTRAINT "notes_monthId_fkey" FOREIGN KEY ("monthId") REFERENCES "months"("id") ON DELETE CASCADE ON UPDATE CASCADE;
