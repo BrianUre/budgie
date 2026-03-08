@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { ManageExpensesDialog } from "@/components/manage-expenses-dialog";
 import { DestinationManagementDialog } from "@/components/destination-management-dialog";
+import { TotalsPanel } from "@/components/totals-panel";
 import { cn, formatMoney } from "@/lib/utils";
 import { Pencil } from "lucide-react";
 
@@ -304,74 +305,6 @@ function ExpensesTable({
   );
 }
 
-function TotalsPanel({
-  contributors,
-  costs,
-}: {
-  contributors: Contributor[];
-  costs: CostRow[];
-}) {
-  const totalCostAmount = useMemo(
-    () => costs.reduce((sum, cost) => sum + Number(cost.amount), 0),
-    [costs]
-  );
-
-  const totalByContributor = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const contributor of contributors) {
-      let total = 0;
-      for (const cost of costs) {
-        const contribution = cost.contributions?.find(
-          (c: Contribution) => c.contributorId === contributor.id
-        );
-        if (contribution) {
-          total +=
-            Number(cost.amount) * (Number(contribution.percentage) / 100);
-        }
-      }
-      map.set(contributor.id, total);
-    }
-    return map;
-  }, [contributors, costs]);
-
-  return (
-    <div>
-      <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-        Totals
-      </h3>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Total costs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-semibold">
-              {formatMoney(totalCostAmount)}
-            </p>
-          </CardContent>
-        </Card>
-        {contributors.map((contributor) => (
-          <Card key={contributor.id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">
-                {contributor.user?.name ??
-                  contributor.user?.email ??
-                  contributor.name ??
-                  "—"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-semibold">
-                {formatMoney(totalByContributor.get(contributor.id) ?? 0)}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function BudgieView({
   budgieId,
   selectedMonthId,
@@ -447,7 +380,11 @@ export function BudgieView({
       </Card>
 
       {contributors.length > 0 && (
-        <TotalsPanel contributors={contributors} costs={activeCosts} />
+        <TotalsPanel
+          contributors={contributors}
+          costs={activeCosts}
+          destinations={destinations}
+        />
       )}
 
       <Card>
