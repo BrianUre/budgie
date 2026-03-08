@@ -17,6 +17,7 @@ export class CostService {
       include: {
         expense: true,
         contributions: true,
+        destination: true,
       },
     });
   }
@@ -32,6 +33,13 @@ export class CostService {
     return this.db.cost.update({
       where: { id: costId },
       data: { isActive },
+    });
+  }
+
+  async updateDestination(costId: string, destinationId: string | null) {
+    return this.db.cost.update({
+      where: { id: costId },
+      data: { destinationId },
     });
   }
 
@@ -60,7 +68,8 @@ export class CostService {
     monthId: string,
     expenseId: string,
     amount: number,
-    budgieId: string
+    budgieId: string,
+    destinationId?: string | null
   ) {
     const existing = await this.db.cost.findUnique({
       where: {
@@ -83,6 +92,7 @@ export class CostService {
           expenseId,
           amount: new Decimal(amount),
           isActive: true,
+          ...(destinationId != null && destinationId !== "" ? { destinationId } : {}),
         },
       });
       const contributorCount = contributors.length;

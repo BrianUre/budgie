@@ -44,7 +44,12 @@ export class ExpenseService {
   }
 
   async create(
-    data: { budgieId: string; name: string; initialAmount: number },
+    data: {
+      budgieId: string;
+      name: string;
+      initialAmount: number;
+      destinationId?: string | null;
+    },
     monthId: string
   ) {
     return this.db.$transaction(async (tx) => {
@@ -60,6 +65,9 @@ export class ExpenseService {
           expenseId: expense.id,
           amount: new Decimal(data.initialAmount),
           isActive: true,
+          ...(data.destinationId != null && data.destinationId !== ""
+            ? { destinationId: data.destinationId }
+            : {}),
         },
       });
 

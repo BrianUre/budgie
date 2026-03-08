@@ -46,6 +46,7 @@ CREATE TABLE "expenses" (
 -- CreateTable
 CREATE TABLE "destinations" (
     "id" TEXT NOT NULL,
+    "budgieId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -130,6 +131,9 @@ ALTER TABLE "months" ADD CONSTRAINT "months_budgieId_fkey" FOREIGN KEY ("budgieI
 
 -- AddForeignKey
 ALTER TABLE "expenses" ADD CONSTRAINT "expenses_budgieId_fkey" FOREIGN KEY ("budgieId") REFERENCES "budgies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "destinations" ADD CONSTRAINT "destinations_budgieId_fkey" FOREIGN KEY ("budgieId") REFERENCES "budgies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "costs" ADD CONSTRAINT "costs_monthId_fkey" FOREIGN KEY ("monthId") REFERENCES "months"("id") ON DELETE CASCADE ON UPDATE CASCADE;

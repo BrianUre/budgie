@@ -81,13 +81,19 @@ export function CreateNextMonthDialog({
   });
 
   const activityItems: ExpenseActivityItem[] = useMemo(() => {
-    return expenses.map((expense) => ({
-      expenseId: expense.id,
-      expenseName: expense.name,
-      costId: null,
-      isActive: draftOverrides[expense.id]?.isActive ?? true,
-      amount: draftOverrides[expense.id]?.amount ?? 0,
-    }));
+    return expenses.map((expense) => {
+      const cost = costsForLatestMonth.find(
+        (costRow) => costRow.expenseId === expense.id
+      );
+      return {
+        expenseId: expense.id,
+        expenseName: expense.name,
+        costId: cost?.id ?? null,
+        isActive: draftOverrides[expense.id]?.isActive ?? true,
+        amount: draftOverrides[expense.id]?.amount ?? 0,
+        destinationId: cost?.destination?.id ?? null,
+      };
+    });
   }, [expenses, draftOverrides]);
 
   const handleActiveChange = (
@@ -156,9 +162,7 @@ export function CreateNextMonthDialog({
         <DialogFooter>
           <Button
             onClick={handleSubmit}
-            disabled={
-              createNextMutation.isPending || expenses.length === 0
-            }
+            disabled={createNextMutation.isPending || expenses.length === 0}
           >
             {createNextMutation.isPending ? "Creating…" : "Create month"}
           </Button>

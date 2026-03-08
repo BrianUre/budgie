@@ -48,6 +48,41 @@ export const costRouter = createTRPCRouter({
       return ctx.services.cost.setActive(input.costId, input.isActive);
     }),
 
+  updateDestination: protectedProcedure
+    .input(
+      z.object({
+        costId: z.string(),
+        destinationId: z.string().nullable(),
+        budgieId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const isAdmin = await ctx.services.contributor.isAdmin(
+        input.budgieId,
+        ctx.auth.userId
+      );
+      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const cost = await ctx.services.cost.getById(input.costId);
+      if (!cost || cost.month.budgieId !== input.budgieId)
+        throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (
+        input.destinationId != null &&
+        input.destinationId !== ""
+      ) {
+        const destination =
+          await ctx.services.destination.getById(input.destinationId);
+        if (!destination || destination.budgieId !== input.budgieId)
+          throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      return ctx.services.cost.updateDestination(
+        input.costId,
+        input.destinationId === "" ? null : input.destinationId
+      );
+    }),
+
   createForMonth: protectedProcedure
     .input(
       z.object({
@@ -55,6 +90,7 @@ export const costRouter = createTRPCRouter({
         expenseId: z.string(),
         amount: z.number().min(0),
         budgieId: z.string(),
+        destinationId: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -75,11 +111,24 @@ export const costRouter = createTRPCRouter({
       if (!expenseBelongsToBudgie)
         throw new TRPCError({ code: "NOT_FOUND" });
 
+      const destinationId =
+        input.destinationId != null && input.destinationId !== ""
+          ? input.destinationId
+          : undefined;
+
+      if (destinationId) {
+        const destination =
+          await ctx.services.destination.getById(destinationId);
+        if (!destination || destination.budgieId !== input.budgieId)
+          throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
       return ctx.services.cost.createForMonth(
         input.monthId,
         input.expenseId,
         input.amount,
-        input.budgieId
+        input.budgieId,
+        destinationId
       );
     }),
 });

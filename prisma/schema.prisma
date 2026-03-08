@@ -34,6 +34,7 @@ model Budgie {
   expenses     Expense[]
   contributors Contributor[]
   invitations  Invitation[]
+  destinations Destination[]
 
   @@map("budgies")
 }
@@ -121,11 +122,13 @@ model Contribution {
 
 model Destination {
   id        String   @id @default(uuid())
+  budgieId  String
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  costs    Cost[]
+  budgie  Budgie  @relation(fields: [budgieId], references: [id], onDelete: Cascade)
+  costs   Cost[]
   payments Payment[]
 
   @@map("destinations")

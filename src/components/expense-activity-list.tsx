@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DestinationDropdown } from "@/components/destination-dropdown";
 
 export type ExpenseActivityItem = {
   expenseId: string;
@@ -11,6 +12,7 @@ export type ExpenseActivityItem = {
   costId: string | null;
   isActive: boolean;
   amount: number;
+  destinationId: string | null;
 };
 
 interface ExpenseActivityListProps {
@@ -29,6 +31,12 @@ interface ExpenseActivityListProps {
   showArchiveButton?: boolean;
   /** When true, checkbox is enabled even when costId is null (e.g. draft mode for create next month). */
   allowToggleWhenNoCost?: boolean;
+  /** When true, show destination dropdown per row (only for rows with costId). Requires budgieId and onDestinationChange. */
+  showDestinationDropdown?: boolean;
+  budgieId?: string;
+  onDestinationChange?: (costId: string, destinationId: string | null) => void;
+  /** Optional trigger (e.g. "Manage destinations" button) to open destination management. */
+  manageDestinationsTrigger?: React.ReactNode;
   disabled?: boolean;
   className?: string;
 }
@@ -43,6 +51,10 @@ export function ExpenseActivityList({
   showAmountInput = false,
   showArchiveButton = false,
   allowToggleWhenNoCost = false,
+  showDestinationDropdown = false,
+  budgieId,
+  onDestinationChange,
+  manageDestinationsTrigger,
   disabled = false,
   className,
 }: ExpenseActivityListProps) {
@@ -55,49 +67,68 @@ export function ExpenseActivityList({
   }
 
   return (
-    <ul className={cn("space-y-2", className)}>
-      {items.map((item) => (
-        <li
-          key={item.expenseId}
-          className="flex flex-wrap items-center gap-3 rounded-md border px-3 py-2"
-        >
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              checked={item.isActive}
-              disabled={
-                disabled ||
-                (item.costId === null && !allowToggleWhenNoCost)
-              }
-              onChange={() =>
-                onActiveChange(item.expenseId, item.costId, !item.isActive)
-              }
-              className="h-4 w-4 rounded border-input"
-              aria-label={`${item.expenseName} active`}
-            />
-            <span className="font-medium">{item.expenseName}</span>
-          </label>
-          {showAmountInput && onAmountChange && (
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={0}
-                step={0.01}
-                value={item.amount}
-                onChange={(event) => {
-                  const value = parseFloat(event.target.value);
-                  if (!Number.isNaN(value) && value >= 0) {
-                    onAmountChange(item.expenseId, value);
-                  }
-                }}
-                disabled={disabled}
-                className="h-8 w-24"
+    <div className={cn("space-y-2", className)}>
+      {manageDestinationsTrigger && (
+        <div className="flex justify-end">{manageDestinationsTrigger}</div>
+      )}
+      <ul className="space-y-2">
+        {items.map((item) => (
+          <li
+            key={item.expenseId}
+            className="flex flex-wrap items-center gap-3 rounded-md border px-3 py-2"
+          >
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={item.isActive}
+                disabled={
+                  disabled ||
+                  (item.costId === null && !allowToggleWhenNoCost)
+                }
+                onChange={() =>
+                  onActiveChange(item.expenseId, item.costId, !item.isActive)
+                }
+                className="h-4 w-4 rounded border-input"
+                aria-label={`${item.expenseName} active`}
               />
-            </div>
-          )}
-          {showAddToMonthButton &&
-            onAddToMonth &&
-            item.costId === null && (
+              <span className="font-medium">{item.expenseName}</span>
+            </label>
+            {showAmountInput && onAmountChange && (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={item.amount}
+                  onChange={(event) => {
+                    const value = parseFloat(event.target.value);
+                    if (!Number.isNaN(value) && value >= 0) {
+                      onAmountChange(item.expenseId, value);
+                    }
+                  }}
+                  disabled={disabled}
+                  className="h-8 w-24"
+                />
+              </div>
+            )}
+            {showDestinationDropdown &&
+              budgieId &&
+              onDestinationChange &&
+              item.costId !== null && (
+                <DestinationDropdown
+                  budgieId={budgieId}
+                  value={item.destinationId}
+                  onValueChange={(destinationId) =>
+                    onDestinationChange(item.costId!, destinationId)
+                  }
+                  disabled={disabled}
+                  placeholder="Destination"
+                  className="h-8 min-w-[10rem]"
+                />
+              )}
+            {showAddToMonthButton &&
+              onAddToMonth &&
+              item.costId === null && (
               <Button
                 type="button"
                 variant="outline"
@@ -109,7 +140,7 @@ export function ExpenseActivityList({
                 Add to month
               </Button>
             )}
-          {showArchiveButton && onArchive && (
+            {showArchiveButton && onArchive && (
             <Button
               type="button"
               variant="ghost"
@@ -122,8 +153,9 @@ export function ExpenseActivityList({
               <Trash2 className="h-4 w-4" />
             </Button>
           )}
-        </li>
-      ))}
-    </ul>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

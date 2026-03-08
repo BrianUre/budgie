@@ -19,6 +19,8 @@ import {
   ExpenseActivityList,
   type ExpenseActivityItem,
 } from "@/components/expense-activity-list";
+import { DestinationDropdown } from "@/components/destination-dropdown";
+import { DestinationManagementDialog } from "@/components/destination-management-dialog";
 import { Plus } from "lucide-react";
 
 interface ManageExpensesDialogProps {
@@ -94,8 +96,19 @@ export function ManageExpensesDialog({
     },
   });
 
+  const updateDestinationMutation = api.cost.updateDestination.useMutation({
+    onSuccess: () => {
+      if (selectedMonthId) {
+        void utils.cost.listForMonth.invalidate({
+          monthId: selectedMonthId,
+          budgieId,
+        });
+      }
+    },
+  });
+
   const expenseForm = useForm({
-    defaultValues: { name: "", initialAmount: 0 },
+    defaultValues: { name: "", initialAmount: 0, destinationId: null as string | null },
     onSubmit: async ({ value }) => {
       if (!selectedMonthId) return;
       await expenseMutation.mutateAsync({
@@ -103,8 +116,13 @@ export function ManageExpensesDialog({
         monthId: selectedMonthId,
         name: value.name.trim(),
         initialAmount: value.initialAmount,
+        destinationId: value.destinationId,
       });
-      expenseForm.reset();
+      expenseForm.reset({
+        name: "",
+        initialAmount: 0,
+        destinationId: value.destinationId,
+      });
     },
   });
 
@@ -119,6 +137,7 @@ export function ManageExpensesDialog({
         costId: cost?.id ?? null,
         isActive: cost?.isActive ?? false,
         amount: cost ? Number(cost.amount) : 0,
+        destinationId: cost?.destinationId ?? cost?.destination?.id ?? null,
       };
     });
   }, [expenses, costsForMonth]);
@@ -150,6 +169,14 @@ export function ManageExpensesDialog({
       monthId: selectedMonthId,
       expenseId,
       amount,
+      budgieId,
+    });
+  };
+
+  const handleDestinationChange = (costId: string, destinationId: string | null) => {
+    updateDestinationMutation.mutate({
+      costId,
+      destinationId,
       budgieId,
     });
   };
@@ -221,6 +248,21 @@ export function ManageExpensesDialog({
                   )}
                 </expenseForm.Field>
               </div>
+              <div className="grid gap-2 sm:max-w-xs">
+                <Label htmlFor="expense-destination" className="sr-only">
+                  Destination
+                </Label>
+                <expenseForm.Field name="destinationId">
+                  {(field) => (
+                    <DestinationDropdown
+                      budgieId={budgieId}
+                      value={field.state.value}
+                      onValueChange={field.handleChange}
+                      placeholder="Destination"
+                    />
+                  )}
+                </expenseForm.Field>
+              </div>
               <expenseForm.Subscribe
                 selector={(state): [string, number, boolean] => [
                   state.values.name,
@@ -249,7 +291,17 @@ export function ManageExpensesDialog({
           </form>
 
           <div className="space-y-2">
-            <Label>Expenses for this month</Label>
+            <div className="flex items-center justify-between">
+              <Label>Expenses for this month</Label>
+              <DestinationManagementDialog
+                budgieId={budgieId}
+                trigger={
+                  <Button type="button" variant="ghost" size="sm">
+                    Manage destinations
+                  </Button>
+                }
+              />
+            </div>
             <ExpenseActivityList
               items={activityItems}
               onActiveChange={handleActiveChange}
@@ -257,10 +309,14 @@ export function ManageExpensesDialog({
               showAddToMonthButton
               onAddToMonth={handleAddToMonth}
               showArchiveButton
+              showDestinationDropdown
+              budgieId={budgieId}
+              onDestinationChange={handleDestinationChange}
               disabled={
                 setActiveMutation.isPending ||
                 archiveMutation.isPending ||
-                createForMonthMutation.isPending
+                createForMonthMutation.isPending ||
+                updateDestinationMutation.isPending
               }
             />
           </div>

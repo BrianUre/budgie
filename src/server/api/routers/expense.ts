@@ -26,15 +26,27 @@ export const expenseRouter = createTRPCRouter({
         monthId: z.string(),
         name: z.string().min(1).max(200),
         initialAmount: z.number().min(0),
+        destinationId: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
+      const destinationId =
+        input.destinationId != null && input.destinationId !== ""
+          ? input.destinationId
+          : undefined;
+      if (destinationId) {
+        const destination =
+          await ctx.services.destination.getById(destinationId);
+        if (!destination || destination.budgieId !== input.budgieId)
+          throw new TRPCError({ code: "NOT_FOUND" });
+      }
       return ctx.services.expense.create(
         {
           budgieId: input.budgieId,
           name: input.name,
           initialAmount: input.initialAmount,
+          destinationId: destinationId ?? null,
         },
         input.monthId
       );
