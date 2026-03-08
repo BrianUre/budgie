@@ -16,12 +16,34 @@ export class InvitationService {
     return `${baseUrl}/invitations?token=${encodeURIComponent(token)}`;
   }
 
+  async listPendingForBudgie(
+    budgieId: string
+  ): Promise<Array<{ id: string; email: string; createdAt: Date }>> {
+    const list = await this.db.invitation.findMany({
+      where: { budgieId, resolved: false },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, email: true, createdAt: true },
+    });
+    return list;
+  }
+
   async createForBudgie(
     budgieId: string,
     email: string,
     invitedByUserId: string,
     invitationMessage?: string
   ): Promise<{ invitation: { id: string }; token: string }> {
+    const existing = await this.db.invitation.findFirst({
+      where: {
+        budgieId,
+        email: { equals: email, mode: "insensitive" },
+        resolved: false,
+      },
+    });
+    if (existing) {
+      throw new Error("An invitation for this email is already pending");
+    }
+
     const token = randomBytes(32).toString("hex");
     const tokenHash = hashToken(token);
     const expiresAt = new Date(

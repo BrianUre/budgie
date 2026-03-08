@@ -52,6 +52,22 @@ export const invitationRouter = createTRPCRouter({
       }
     }),
 
+  listPendingForBudgie: protectedProcedure
+    .input(z.object({ budgieId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const isAdmin = await ctx.services.contributor.isAdmin(
+        input.budgieId,
+        ctx.auth.userId
+      );
+      if (!isAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not an admin of this budgie",
+        });
+      }
+      return ctx.services.invitation.listPendingForBudgie(input.budgieId);
+    }),
+
   cancel: protectedProcedure
     .input(z.object({ invitationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -100,12 +116,29 @@ export const invitationRouter = createTRPCRouter({
           message: "Not an admin of this budgie",
         });
       }
-      const { token } = await ctx.services.invitation.createForBudgie(
-        input.budgieId,
-        input.inviteeEmail,
-        ctx.auth.userId,
-        input.invitationMessage
-      );
+      let token: string;
+      try {
+        const result = await ctx.services.invitation.createForBudgie(
+          input.budgieId,
+          input.inviteeEmail,
+          ctx.auth.userId,
+          input.invitationMessage
+        );
+        token = result.token;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to create invitation";
+        if (message.includes("already pending")) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This email already has a pending invitation",
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message,
+        });
+      }
       const invitationLink = ctx.services.invitation.buildInvitationUrl(token);
       const user = await ctx.services.user.getById(ctx.auth.userId);
       const hostName = user?.name ?? user?.email ?? "Someone";
