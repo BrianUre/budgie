@@ -68,15 +68,15 @@ export function BudgieDetailClient() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col p-8">
+    <main className="flex min-h-screen flex-col sm:p-8">
       <div className="mx-auto w-full max-w-6xl space-y-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 py-2">
           <Link href="/">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold">{budgie.name}</h1>
+          <h1 className="text-base sm:text-2xl"><span className="font-bold">Budgie:</span> {budgie.name}</h1>
         </div>
 
         <MonthSelector
