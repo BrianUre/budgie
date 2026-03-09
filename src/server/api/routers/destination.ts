@@ -2,8 +2,15 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 
+type ContributorServices = {
+  contributor: {
+    isAdmin: (budgieId: string, userId: string) => Promise<boolean>;
+    isContributor: (budgieId: string, userId: string) => Promise<boolean>;
+  };
+};
+
 async function requireBudgieAdmin(
-  services: { contributor: { isAdmin: (budgieId: string, userId: string) => Promise<boolean> } },
+  services: ContributorServices,
   budgieId: string,
   userId: string
 ) {
@@ -11,11 +18,21 @@ async function requireBudgieAdmin(
   if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN", message: "Not an admin of this budgie" });
 }
 
+async function requireBudgieContributor(
+  services: ContributorServices,
+  budgieId: string,
+  userId: string
+) {
+  const isContributor = await services.contributor.isContributor(budgieId, userId);
+  if (!isContributor)
+    throw new TRPCError({ code: "FORBIDDEN", message: "Not a contributor of this budgie" });
+}
+
 export const destinationRouter = createTRPCRouter({
   list: protectedProcedure
     .input(z.object({ budgieId: z.string() }))
     .query(async ({ ctx, input }) => {
-      await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
+      await requireBudgieContributor(ctx.services, input.budgieId, ctx.auth.userId);
       return ctx.services.destination.listByBudgie(input.budgieId);
     }),
 

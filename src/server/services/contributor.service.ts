@@ -49,6 +49,13 @@ export class ContributorService {
     return !!contributor;
   }
 
+  async isContributor(budgieId: string, userId: string): Promise<boolean> {
+    const contributor = await this.db.contributor.findFirst({
+      where: { budgieId, userId },
+    });
+    return !!contributor;
+  }
+
   async listAdminsForBudgie(budgieId: string) {
     return this.db.contributor.findMany({
       where: { budgieId, isAdmin: true },
