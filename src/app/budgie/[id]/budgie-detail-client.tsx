@@ -7,10 +7,12 @@ import { useAuth } from "@clerk/nextjs";
 import { RedirectToSignIn } from "@clerk/nextjs";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PanelRight } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { MonthSelector } from "@/components/month-selector";
 import { BudgieView } from "@/components/budgie-view";
 import { ContributorsList } from "@/components/contributors-list";
+import { Separator } from "@/components/ui/separator";
 
 export function BudgieDetailClient() {
   const params = useParams();
@@ -69,7 +71,7 @@ export function BudgieDetailClient() {
 
   return (
     <main className="flex min-h-screen flex-col sm:p-8">
-      <div className="mx-auto w-full max-w-6xl space-y-6">
+      <div className="mx-auto w-full max-w-6xl space-y-2">
         <div className="flex items-center gap-2 py-2">
           <Link href="/">
             <Button variant="ghost" size="icon">
@@ -77,7 +79,15 @@ export function BudgieDetailClient() {
             </Button>
           </Link>
           <h1 className="text-base sm:text-2xl"><span className="font-bold">Budgie:</span> {budgie.name}</h1>
+          <div className="z-40 ml-auto sm:hidden">
+            <SidebarTrigger>
+              <PanelRight className="h-4 w-4" />
+              <span className="sr-only">Toggle Sidebar</span>
+            </SidebarTrigger>
+          </div>
         </div>
+
+        <Separator className="" />
 
         <MonthSelector
           budgieId={id}
