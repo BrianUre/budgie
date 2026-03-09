@@ -20,10 +20,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ManageExpensesDialog } from "@/components/manage-expenses-dialog";
-import { DestinationsCard } from "@/components/destinations-card";
-import { TotalsPanel } from "@/components/totals-panel";
 import { cn, formatMoney } from "@/lib/utils";
 import { Pencil } from "lucide-react";
+import { Costs } from "@/server/services/cost.service";
 
 type Contributor = {
   id: string;
@@ -335,6 +334,7 @@ export function BudgieView({
   contributors,
   currentUserId,
   className,
+  costsForMonth,
 }: {
   budgieId: string;
   selectedMonthId: string | null;
@@ -342,15 +342,8 @@ export function BudgieView({
   contributors: Contributor[];
   currentUserId?: string | null;
   className?: string;
+  costsForMonth: Costs;
 }) {
-  const { data: costsForMonth = [] } = api.cost.listForMonth.useQuery(
-    { monthId: selectedMonthId!, budgieId },
-    { enabled: !!selectedMonthId }
-  );
-  const { data: destinations = [] } = api.destination.list.useQuery(
-    { budgieId },
-    { enabled: !!budgieId }
-  );
   const activeCosts = useMemo(
     () => costsForMonth.filter((cost) => cost.isActive),
     [costsForMonth]
@@ -393,7 +386,7 @@ export function BudgieView({
             />
           )}
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-x-auto b-dev">
           <ExpensesTable
             costs={activeCosts}
             contributors={contributors}
@@ -404,21 +397,6 @@ export function BudgieView({
           />
         </CardContent>
       </Card>
-
-      {contributors.length > 0 && (
-        <TotalsPanel
-          contributors={contributors}
-          costs={activeCosts}
-          destinations={destinations}
-          currentUserId={currentUserId}
-        />
-      )}
-
-      <DestinationsCard
-        budgieId={budgieId}
-        isAdmin={isAdmin}
-        destinations={destinations}
-      />
     </div>
   );
 }

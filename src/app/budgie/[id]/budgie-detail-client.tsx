@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { RedirectToSignIn } from "@clerk/nextjs";
@@ -13,6 +13,8 @@ import { MonthSelector } from "@/components/month-selector";
 import { BudgieView } from "@/components/budgie-view";
 import { ContributorsList } from "@/components/contributors-list";
 import { Separator } from "@/components/ui/separator";
+import { DestinationsCard } from "@/components/destinations-card";
+import { TotalsPanel } from "@/components/totals-panel";
 
 export function BudgieDetailClient() {
   const params = useParams();
@@ -41,6 +43,19 @@ export function BudgieDetailClient() {
   );
 
   const [selectedMonthId, setSelectedMonthId] = useState<string | null>(null);
+
+  const { data: costsForMonth = [] } = api.cost.listForMonth.useQuery(
+    { monthId: selectedMonthId!, budgieId: id },
+    { enabled: !!selectedMonthId }
+  );
+  const { data: destinations = [] } = api.destination.list.useQuery(
+    { budgieId: id },
+    { enabled: !!id }
+  );
+  const activeCosts = useMemo(
+    () => costsForMonth.filter((cost) => cost.isActive),
+    [costsForMonth]
+  );
 
   if (!isLoaded || budgieLoading || !id) {
     return (
@@ -78,7 +93,9 @@ export function BudgieDetailClient() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-base sm:text-2xl"><span className="font-bold">Budgie:</span> {budgie.name}</h1>
+          <h1 className="text-base sm:text-2xl">
+            <span className="font-bold">Budgie:</span> {budgie.name}
+          </h1>
           <div className="z-40 ml-auto sm:hidden">
             <SidebarTrigger>
               <PanelRight className="h-4 w-4" />
@@ -96,12 +113,30 @@ export function BudgieDetailClient() {
           isAdmin={isAdmin}
         />
 
+        <Separator />
+
         <BudgieView
           budgieId={id}
           selectedMonthId={selectedMonthId}
           isAdmin={isAdmin}
           contributors={contributors}
           currentUserId={userId}
+          costsForMonth={costsForMonth}
+        />
+
+        {contributors.length > 0 && (
+          <TotalsPanel
+            contributors={contributors}
+            costs={activeCosts}
+            destinations={destinations}
+            currentUserId={userId}
+          />
+        )}
+
+        <DestinationsCard
+          budgieId={id}
+          isAdmin={isAdmin}
+          destinations={destinations}
         />
 
         <ContributorsList
