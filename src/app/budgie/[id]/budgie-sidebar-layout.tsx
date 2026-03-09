@@ -27,7 +27,7 @@ export function BudgieSidebarLayout({
 }) {
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="fixed top-4 right-4 z-40 md:hiddenj b-dev">
+      <div className="fixed top-4 right-4 z-40 md:hidden">
         <SidebarTrigger>
           <PanelRight className="h-4 w-4" />
           <span className="sr-only">Toggle Sidebar</span>
