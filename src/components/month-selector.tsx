@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Carousel,
   CarouselContent,
@@ -67,68 +62,56 @@ function MonthSelectorDesktop({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between p-0">
-        <div>
-          <CardTitle className="text-base sm:text-2xl">Month</CardTitle>
-        </div>
-        {isAdmin && (
-          <CreateNextMonthDialog
-            budgieId={budgieId}
-            onSuccess={(newMonthId) => onSelectMonth(newMonthId)}
-          />
-        )}
-      </CardHeader>
       <CardContent className="p-0">
         <Carousel
           opts={{ align: "start", loop: false }}
           setApi={setCarouselApi}
           className="mx-12"
         >
-          <CarouselContent>
+          <CarouselContent className="px-4">
             {months.map((month) => (
               <CarouselItem
                 key={month.id}
-                className="basis-[180px] md:basis-40 overflow-visible"
+                className={cn(
+                  "basis-40 overflow-visible px-2 cursor-pointer transition-colors hover:bg-muted/50 group flex items-center justify-around",
+                  selectedMonthId === month.id && "text-primary"
+                )}
               >
-                <Card
-                  className={cn(
-                    "cursor-pointer transition-colors hover:bg-muted/50 group",
-                    selectedMonthId === month.id && "text-primary"
-                  )}
-                  onClick={() => onSelectMonth(month.id)}
-                >
-                  <CardContent className="flex items-center justify-between p-4">
-                    <span className="font-medium">
-                      {formatMonth(new Date(month.date))}
-                    </span>
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive invisible group-hover:visible"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteMonth(
-                            month.id,
-                            formatMonth(new Date(month.date))
-                          );
-                        }}
-                        disabled={deleteMonthIsPending}
-                        aria-label={`Delete ${formatMonth(
-                          new Date(month.date)
-                        )}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
+                <span className="font-medium">
+                  {formatMonth(new Date(month.date))}
+                </span>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive invisible group-hover:visible"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteMonth(
+                        month.id,
+                        formatMonth(new Date(month.date))
+                      );
+                    }}
+                    disabled={deleteMonthIsPending}
+                    aria-label={`Delete ${formatMonth(new Date(month.date))}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </CarouselItem>
             ))}
           </CarouselContent>
           <CarouselPrevious />
           <CarouselNext />
         </Carousel>
+        <div className="flex items-center justify-center p-0">
+          {isAdmin && (
+            <CreateNextMonthDialog
+              budgieId={budgieId}
+              onSuccess={(newMonthId) => onSelectMonth(newMonthId)}
+            />
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -163,60 +146,60 @@ function MonthSelectorMobile({
         </DrawerTrigger>
         <DrawerContent>
           <DrawerHeader className="flex flex-col gap-2 py-0">
-            <DrawerTitle className="text-base sm:text-2xl">Select month</DrawerTitle>
+            <DrawerTitle className="text-base sm:text-2xl">
+              Select month
+            </DrawerTitle>
             {isAdmin && (
-                <CreateNextMonthDialog
-                  budgieId={budgieId}
-                  onSuccess={(newMonthId) => {
-                    onSelectMonth(newMonthId);
-                    setOpen(false);
-                  }}
-                />
+              <CreateNextMonthDialog
+                budgieId={budgieId}
+                onSuccess={(newMonthId) => {
+                  onSelectMonth(newMonthId);
+                  setOpen(false);
+                }}
+              />
             )}
           </DrawerHeader>
-            <ul className="max-h-[60vh] overflow-auto px-4 pb-4">
-              {months.map((month) => (
-                <li key={month.id}>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm transition-colors hover:bg-muted/50",
-                      selectedMonthId === month.id && "bg-muted text-primary"
-                    )}
-                    onClick={() => {
-                      onSelectMonth(month.id);
-                      setOpen(false);
-                    }}
-                  >
-                    <span className="font-medium">
-                      {formatMonth(new Date(month.date))}
-                    </span>
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteMonth(
-                            month.id,
-                            formatMonth(new Date(month.date))
-                          );
-                        }}
-                        disabled={deleteMonthIsPending}
-                        aria-label={`Delete ${formatMonth(
-                          new Date(month.date)
-                        )}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </DrawerContent>
-        </Drawer>
+          <ul className="max-h-[60vh] overflow-auto px-4 pb-4">
+            {months.map((month) => (
+              <li key={month.id}>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm transition-colors hover:bg-muted/50",
+                    selectedMonthId === month.id && "bg-muted text-primary"
+                  )}
+                  onClick={() => {
+                    onSelectMonth(month.id);
+                    setOpen(false);
+                  }}
+                >
+                  <span className="font-medium">
+                    {formatMonth(new Date(month.date))}
+                  </span>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteMonth(
+                          month.id,
+                          formatMonth(new Date(month.date))
+                        );
+                      }}
+                      disabled={deleteMonthIsPending}
+                      aria-label={`Delete ${formatMonth(new Date(month.date))}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </DrawerContent>
+      </Drawer>
     </Card>
   );
 }

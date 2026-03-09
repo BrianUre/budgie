@@ -113,6 +113,8 @@ export function BudgieDetailClient() {
           isAdmin={isAdmin}
         />
 
+        <Separator />
+
         <BudgieView
           budgieId={id}
           selectedMonthId={selectedMonthId}

@@ -145,7 +145,6 @@ function ContributionCell({
       setEditing(false);
     }
   };
-console.log("contribution", contribution);
 
   return (
     <div>
@@ -354,10 +353,10 @@ export function BudgieView({
       <Card className={cn(className)}>
         <CardHeader>
           <CardTitle>Expenses &amp; contributions</CardTitle>
-          <CardDescription>
+          {/* <CardDescription>
             Costs are per month; select a month to see and edit expenses and
             contribution split.
-          </CardDescription>
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
@@ -371,13 +370,13 @@ export function BudgieView({
   return (
     <div className={cn("space-y-6", className)}>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex sm:flex-row items-start sm:items-center justify-between px-4 py-0">
           <div>
-            <CardTitle>Expenses &amp; contributions</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base sm:text-2xl">Expenses &amp; contributions</CardTitle>
+            {/* <CardDescription>
               Costs are per month; add an expense to track it. Set each
               contributor&apos;s share per cost (percentages sum to 100%).
-            </CardDescription>
+            </CardDescription> */}
           </div>
           {isAdmin && (
             <ManageExpensesDialog
