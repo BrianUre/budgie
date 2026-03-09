@@ -30,7 +30,7 @@ const config = {
   				foreground: colors.white
   			},
   			secondary: {
-  				DEFAULT: colors.orange[500],
+  				DEFAULT: colors.orange[400],
   				foreground: colors.white
   			},
   			destructive: {
