@@ -26,13 +26,20 @@ const config = {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			primary: {
-  				DEFAULT: colors.green[700],
+  				DEFAULT: colors.green[800],
+				  hover: colors.green[700],
   				foreground: colors.white
   			},
   			secondary: {
-  				DEFAULT: colors.orange[400],
+  				DEFAULT: colors.orange[500],
+				  hover: colors.orange[400],
   				foreground: colors.white
   			},
+				tertiary: {
+					DEFAULT: colors.sky[700],
+					hover: colors.cyan[600],
+					foreground: colors.white
+				},
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'

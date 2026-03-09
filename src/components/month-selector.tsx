@@ -68,23 +68,27 @@ function MonthSelectorDesktop({
           setApi={setCarouselApi}
           className="mx-12"
         >
-          <CarouselContent className="px-4">
+          <CarouselContent className="px-4 !gap-0">
             {months.map((month) => (
               <CarouselItem
                 key={month.id}
                 className={cn(
-                  "basis-40 overflow-visible px-2 cursor-pointer transition-colors hover:bg-muted/50 group flex items-center justify-around",
+                  "basis-48 overflow-visible px-2 cursor-pointer hover:text-primary-hover group flex items-center justify-around group hover:bg-muted/50",
                   selectedMonthId === month.id && "text-primary"
                 )}
               >
-                <span className="font-medium">
+                <span className="font-medium flex items-center gap-2">
+                  <Calendar className={cn(
+                    "h-4 w-4 group-hover:text-secondary-hover",
+                    selectedMonthId === month.id && "text-secondary"
+                    )} />
                   {formatMonth(new Date(month.date))}
                 </span>
                 {isAdmin && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive invisible group-hover:visible"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive invisible group-hover:visible !bg-none"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteMonth(

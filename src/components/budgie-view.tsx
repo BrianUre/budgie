@@ -1,13 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  type ColumnDef,
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -20,8 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ManageExpensesDialog } from "@/components/manage-expenses-dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn, formatMoney } from "@/lib/utils";
-import { Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { Costs } from "@/server/services/cost.service";
 
 type Contributor = {
@@ -86,7 +93,7 @@ function CostEdit({
   return (
     <button
       type="button"
-      className="flex items-center gap-1 hover:underline text-2xl"
+      className="flex items-center gap-1 hover:underline text-base sm:text-2xl"
       onClick={() => {
         setDraft(String(value));
         setEditing(true);
@@ -129,7 +136,6 @@ function ContributionCell({
   const amount = costAmount * (percentage / 100);
 
   const handleSave = async () => {
-    console.log("draft", draft);
     const value = parseFloat(draft);
     if (
       !Number.isNaN(value) &&
@@ -148,10 +154,10 @@ function ContributionCell({
 
   return (
     <div>
-    <div className="grid max-w-48 grid-cols-2 justify-items-end gap-4">
+    <div className="flex items-center justify-end gap-2">
       <span
         className={cn(
-          "font-mono text-2xl",
+          "font-mono !text-base sm:!text-2xl",
           isCurrentUser && "text-primary font-semibold"
         )}
       >
@@ -183,9 +189,10 @@ function ContributionCell({
       ) : (
         <span
           className={cn(
+            "!text:sm sm:text-sm",
             isAdmin
-              ? "cursor-pointer text-xl hover:underline"
-              : "text-muted-foreground text-xs",
+              ? "cursor-pointer hover:underline"
+              : "text-muted-foreground",
             isCurrentUser && "text-primary font-semibold"
           )}
           onClick={
@@ -225,6 +232,18 @@ type CostRow = {
   contributions: Contribution[];
 };
 
+type ExpensesTableMeta = {
+  costMutation: ReturnType<typeof api.cost.updateAmount.useMutation>;
+  isAdmin: boolean;
+  budgieId: string;
+  selectedMonthId: string;
+  currentUserId: string | null;
+  contributors: Contributor[];
+  contributor?: Contributor;
+  isCurrentUser?: boolean;
+  cellClassName?: string;
+};
+
 function ExpensesTable({
   costs,
   contributors,
@@ -240,6 +259,9 @@ function ExpensesTable({
   selectedMonthId: string;
   currentUserId?: string | null;
 }) {
+  const isMobile = useIsMobile();
+  const [extraColumnIndex, setExtraColumnIndex] = useState(0);
+
   const utils = api.useUtils();
   const costMutation = api.cost.updateAmount.useMutation({
     onSuccess: () => {
@@ -250,79 +272,213 @@ function ExpensesTable({
     },
   });
 
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Expense</TableHead>
-          <TableHead>Cost</TableHead>
-          {contributors.map((c) => (
-            <TableHead key={c.id}>{c.user?.name ?? c.name ?? "—"}</TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {costs.length === 0 ? (
-          <TableRow>
-            <TableCell
-              colSpan={2 + contributors.length}
-              className="text-muted-foreground text-center"
-            >
-              No expenses yet. Add one to get started.
-            </TableCell>
-          </TableRow>
+  const columnHelper = createColumnHelper<CostRow>();
+  const sharedMeta: Omit<ExpensesTableMeta, "contributor" | "isCurrentUser" | "cellClassName"> = {
+    costMutation,
+    isAdmin,
+    budgieId,
+    selectedMonthId,
+    currentUserId: currentUserId ?? null,
+    contributors,
+  };
+
+  const allColumns = useMemo<ColumnDef<CostRow, unknown>[]>(() => {
+    const expenseCol = columnHelper.accessor(
+      (row) => row.expense?.name ?? "—",
+      {
+        id: "expense",
+        header: "Expense",
+        cell: ({ getValue }) => (
+          <span className="font-medium sm:text-2xl">{getValue()}</span>
+        ),
+      }
+    );
+
+    const costCol = columnHelper.accessor((row) => row.amount, {
+      id: "cost",
+      header: "Cost",
+      meta: { ...sharedMeta, cellClassName: "font-mono text-2xl" },
+      cell: ({ row, column }) => {
+        const meta = column.columnDef.meta as ExpensesTableMeta | undefined;
+        if (!meta) return null;
+        const amount = Number(row.original.amount);
+        return meta.isAdmin ? (
+          <CostEdit
+            value={amount}
+            onSave={(v) =>
+              meta.costMutation.mutateAsync({
+                budgieId: meta.budgieId,
+                costId: row.original.id,
+                amount: v,
+              })
+            }
+            isPending={meta.costMutation.isPending}
+          />
         ) : (
-          costs.map((cost) => (
-            <TableRow key={cost.id}>
-              <TableCell className="font-medium text-2xl">
-                {cost.expense?.name ?? "—"}
-              </TableCell>
-              <TableCell className="font-mono text-2xl">
-                {isAdmin ? (
-                  <CostEdit
-                    value={Number(cost.amount)}
-                    onSave={(v) =>
-                      costMutation.mutateAsync({
-                        budgieId,
-                        costId: cost.id,
-                        amount: v,
-                      })
-                    }
-                    isPending={costMutation.isPending}
-                  />
-                ) : (
-                  formatMoney(Number(cost.amount))
-                )}
-              </TableCell>
-              {contributors.map((contributor) => (
-                <TableCell
-                  key={contributor.id}
-                  className={cn(
-                    currentUserId &&
-                      contributor.userId === currentUserId &&
-                      "bg-primary/5"
+          formatMoney(amount)
+        );
+      },
+    });
+
+    const contributorCols: ColumnDef<CostRow, unknown>[] = contributors.map(
+      (contributor) => {
+        const isCurrentUser =
+          !!currentUserId && contributor.userId === currentUserId;
+        return columnHelper.display({
+          id: contributor.id,
+          header: contributor.user?.name ?? contributor.name ?? "—",
+          meta: {
+            ...sharedMeta,
+            contributor,
+            isCurrentUser,
+            cellClassName: isCurrentUser ? "bg-primary/5" : undefined,
+          },
+          cell: ({ row, column }) => {
+            const meta = column.columnDef.meta as ExpensesTableMeta | undefined;
+            if (!meta?.contributor) return null;
+            const contribution = row.original.contributions.find(
+              (c: Contribution) => c.contributorId === meta.contributor!.id
+            );
+            return (
+              <ContributionCell
+                costId={row.original.id}
+                costAmount={Number(row.original.amount)}
+                contribution={contribution}
+                isAdmin={meta.isAdmin}
+                monthId={meta.selectedMonthId}
+                budgieId={meta.budgieId}
+                isCurrentUser={meta.isCurrentUser}
+              />
+            );
+          },
+        });
+      }
+    );
+
+    return [expenseCol, costCol, ...contributorCols] as ColumnDef<
+      CostRow,
+      unknown
+    >[];
+  }, [
+    contributors,
+    isAdmin,
+    budgieId,
+    selectedMonthId,
+    currentUserId,
+    costMutation,
+  ]);
+
+  const extraColumnOptionsCount = 1 + contributors.length;
+  const columns = useMemo(() => {
+    if (!isMobile) return allColumns;
+    const extraIndex = Math.min(
+      Math.max(0, extraColumnIndex),
+      extraColumnOptionsCount - 1
+    );
+    return [allColumns[0]!, allColumns[1 + extraIndex]!];
+  }, [isMobile, extraColumnIndex, allColumns, extraColumnOptionsCount]);
+
+  const table = useReactTable({
+    data: costs,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  const cyclePrev = () => {
+    setExtraColumnIndex((i) =>
+      i <= 0 ? extraColumnOptionsCount - 1 : i - 1
+    );
+  };
+  const cycleNext = () => {
+    setExtraColumnIndex((i) =>
+      i >= extraColumnOptionsCount - 1 ? 0 : i + 1
+    );
+  };
+
+  const extraColumnLabel =
+    extraColumnIndex === 0
+      ? "Cost"
+      : contributors[extraColumnIndex - 1]?.user?.name ??
+        contributors[extraColumnIndex - 1]?.name ??
+        "—";
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
                   )}
-                >
-                  <ContributionCell
-                    costId={cost.id}
-                    costAmount={Number(cost.amount)}
-                    contribution={cost.contributions.find(
-                      (contribution: Contribution) => contribution.contributorId === contributor.id
-                    )}
-                    isAdmin={isAdmin}
-                    monthId={selectedMonthId}
-                    budgieId={budgieId}
-                    isCurrentUser={
-                      !!currentUserId && contributor.userId === currentUserId
-                    }
-                  />
-                </TableCell>
+                </TableHead>
               ))}
             </TableRow>
-          ))
-        )}
-      </TableBody>
-    </Table>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={table.getAllColumns().length}
+                className="text-muted-foreground text-center"
+              >
+                No expenses yet. Add one to get started.
+              </TableCell>
+            </TableRow>
+          ) : (
+            table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => {
+                  const meta = cell.column.columnDef.meta as
+                    | ExpensesTableMeta
+                    | undefined;
+                  return (
+                    <TableCell
+                      key={cell.id}
+                      className={meta?.cellClassName}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+      {isMobile && extraColumnOptionsCount > 1 && (
+        <div className="flex items-center justify-center gap-2 py-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={cyclePrev}
+            aria-label="Previous column"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="min-w-[6rem] text-center text-sm text-muted-foreground">
+            {extraColumnLabel}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={cycleNext}
+            aria-label="Next column"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -366,7 +522,7 @@ export function BudgieView({
   return (
     <div className={cn("space-y-6", className)}>
       <Card>
-        <CardHeader className="flex sm:flex-row items-start sm:items-center justify-between px-4 py-0">
+        <CardHeader className="flex flex-row items-center justify-between px-4 py-0">
           <div>
             <CardTitle className="text-base sm:text-2xl">Expenses</CardTitle>
           </div>
