@@ -11,12 +11,7 @@ import {
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -137,12 +132,7 @@ function ContributionCell({
 
   const handleSave = async () => {
     const value = parseFloat(draft);
-    if (
-      !Number.isNaN(value) &&
-      value >= 0 &&
-      value <= 100 &&
-      contribution
-    ) {
+    if (!Number.isNaN(value) && value >= 0 && value <= 100 && contribution) {
       await setPercentageMutation.mutateAsync({
         costId,
         contributionId: contribution.id,
@@ -154,73 +144,73 @@ function ContributionCell({
 
   return (
     <div>
-    <div className="flex items-center justify-end gap-2">
-      <span
-        className={cn(
-          "font-mono !text-base sm:!text-2xl",
-          isCurrentUser && "text-primary font-semibold"
-        )}
-      >
-        {formatMoney(amount)}
-      </span>
-      {isAdmin && editing ? (
-        <span className="flex items-center gap-1">
-          <Input
-            type="number"
-            min={0}
-            max={100}
-            step={0.5}
-            className="h-8 w-16"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => void handleSave()}
-            onKeyDown={(e) => e.key === "Enter" && void handleSave()}
-          />
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8"
-            onClick={() => void handleSave()}
-            disabled={setPercentageMutation.isPending}
-          >
-            <Pencil className="h-3 w-3" />
-          </Button>
-        </span>
-      ) : (
+      <div className="flex items-center justify-end gap-2">
         <span
           className={cn(
-            "!text:sm sm:text-sm",
-            isAdmin
-              ? "cursor-pointer hover:underline"
-              : "text-muted-foreground",
+            "font-mono !text-base sm:!text-2xl",
             isCurrentUser && "text-primary font-semibold"
           )}
-          onClick={
-            isAdmin
-              ? () => {
-                  setDraft(String(percentage));
-                  setEditing(true);
-                }
-              : undefined
-          }
-          onKeyDown={
-            isAdmin
-              ? (e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
+        >
+          {formatMoney(amount)}
+        </span>
+        {isAdmin && editing ? (
+          <span className="flex items-center gap-1">
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
+              className="h-8 w-16"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={() => void handleSave()}
+              onKeyDown={(e) => e.key === "Enter" && void handleSave()}
+            />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={() => void handleSave()}
+              disabled={setPercentageMutation.isPending}
+            >
+              <Pencil className="h-3 w-3" />
+            </Button>
+          </span>
+        ) : (
+          <span
+            className={cn(
+              "!text:sm sm:text-sm",
+              isAdmin
+                ? "cursor-pointer hover:underline"
+                : "text-muted-foreground",
+              isCurrentUser && "text-primary font-semibold"
+            )}
+            onClick={
+              isAdmin
+                ? () => {
                     setDraft(String(percentage));
                     setEditing(true);
                   }
-                }
-              : undefined
-          }
+                : undefined
+            }
+            onKeyDown={
+              isAdmin
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setDraft(String(percentage));
+                      setEditing(true);
+                    }
+                  }
+                : undefined
+            }
             role={isAdmin ? "button" : undefined}
-          tabIndex={isAdmin ? 0 : undefined}
-        >
-          {percentage}%
-        </span>
-      )}
-    </div>
+            tabIndex={isAdmin ? 0 : undefined}
+          >
+            {percentage}%
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -273,7 +263,10 @@ function ExpensesTable({
   });
 
   const columnHelper = createColumnHelper<CostRow>();
-  const sharedMeta: Omit<ExpensesTableMeta, "contributor" | "isCurrentUser" | "cellClassName"> = {
+  const sharedMeta: Omit<
+    ExpensesTableMeta,
+    "contributor" | "isCurrentUser" | "cellClassName"
+  > = {
     costMutation,
     isAdmin,
     budgieId,
@@ -385,22 +378,18 @@ function ExpensesTable({
   });
 
   const cyclePrev = () => {
-    setExtraColumnIndex((i) =>
-      i <= 0 ? extraColumnOptionsCount - 1 : i - 1
-    );
+    setExtraColumnIndex((i) => (i <= 0 ? extraColumnOptionsCount - 1 : i - 1));
   };
   const cycleNext = () => {
-    setExtraColumnIndex((i) =>
-      i >= extraColumnOptionsCount - 1 ? 0 : i + 1
-    );
+    setExtraColumnIndex((i) => (i >= extraColumnOptionsCount - 1 ? 0 : i + 1));
   };
 
   const extraColumnLabel =
     extraColumnIndex === 0
       ? "Cost"
-      : contributors[extraColumnIndex - 1]?.user?.name ??
+      : (contributors[extraColumnIndex - 1]?.user?.name ??
         contributors[extraColumnIndex - 1]?.name ??
-        "—";
+        "—");
 
   return (
     <div className="flex flex-col gap-2">
@@ -437,10 +426,7 @@ function ExpensesTable({
                     | ExpensesTableMeta
                     | undefined;
                   return (
-                    <TableCell
-                      key={cell.id}
-                      className={meta?.cellClassName}
-                    >
+                    <TableCell key={cell.id} className={meta?.cellClassName}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -526,7 +512,7 @@ export function BudgieView({
           <div>
             <CardTitle className="text-base sm:text-2xl">Expenses</CardTitle>
           </div>
-          
+
           {isAdmin && (
             <ManageExpensesDialog
               budgieId={budgieId}
