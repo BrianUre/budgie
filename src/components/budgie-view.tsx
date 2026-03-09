@@ -352,11 +352,7 @@ export function BudgieView({
     return (
       <Card className={cn(className)}>
         <CardHeader>
-          <CardTitle>Expenses &amp; contributions</CardTitle>
-          {/* <CardDescription>
-            Costs are per month; select a month to see and edit expenses and
-            contribution split.
-          </CardDescription> */}
+          <CardTitle>Expenses</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
@@ -372,12 +368,9 @@ export function BudgieView({
       <Card>
         <CardHeader className="flex sm:flex-row items-start sm:items-center justify-between px-4 py-0">
           <div>
-            <CardTitle className="text-base sm:text-2xl">Expenses &amp; contributions</CardTitle>
-            {/* <CardDescription>
-              Costs are per month; add an expense to track it. Set each
-              contributor&apos;s share per cost (percentages sum to 100%).
-            </CardDescription> */}
+            <CardTitle className="text-base sm:text-2xl">Expenses</CardTitle>
           </div>
+          
           {isAdmin && (
             <ManageExpensesDialog
               budgieId={budgieId}
@@ -385,7 +378,7 @@ export function BudgieView({
             />
           )}
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-x-auto p-0">
           <ExpensesTable
             costs={activeCosts}
             contributors={contributors}

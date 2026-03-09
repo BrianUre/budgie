@@ -182,7 +182,7 @@ export function ManageExpensesDialog({
   };
 
   const defaultTrigger = (
-    <Button size="sm" disabled={!selectedMonthId}>
+    <Button size="sm" variant="ghost" disabled={!selectedMonthId}>
       <Plus className="h-4 w-4" />
       Manage expenses
     </Button>
