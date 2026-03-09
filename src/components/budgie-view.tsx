@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   type ColumnDef,
   createColumnHelper,
@@ -23,7 +23,7 @@ import {
 import { ManageExpensesDialog } from "@/components/manage-expenses-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn, formatMoney } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, ReceiptText } from "lucide-react";
 import { Costs } from "@/server/services/cost.service";
 
 type Contributor = {
@@ -51,6 +51,7 @@ function CostEdit({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(value));
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
     const v = parseFloat(draft);
@@ -60,43 +61,40 @@ function CostEdit({
     }
   };
 
+  useEffect(() => {
+    if (editing) inputRef.current?.select();
+  }, [editing]);
+
   if (editing) {
     return (
-      <span className="flex items-center gap-1">
+      <div className="text-right">
         <Input
+          ref={inputRef}
           type="number"
           min={0}
           step={0.01}
-          className="h-8 w-24"
+          className="h-8 w-24 text-base sm:text-2xl"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => void handleSave()}
           onKeyDown={(e) => e.key === "Enter" && void handleSave()}
         />
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-8 w-8"
-          onClick={() => void handleSave()}
-          disabled={isPending}
-        >
-          <Pencil className="h-3 w-3" />
-        </Button>
-      </span>
+      </div>
     );
   }
   return (
-    <button
-      type="button"
-      className="flex items-center gap-1 hover:underline text-base sm:text-2xl"
-      onClick={() => {
-        setDraft(String(value));
-        setEditing(true);
-      }}
-    >
-      {formatMoney(value)}
-      <Pencil className="h-3 w-3 opacity-70" />
-    </button>
+    <div className="text-right text-tertiary">
+      <button
+        type="button"
+        className="cursor-pointer hover:underline text-base sm:text-2xl font-zain"
+        onClick={() => {
+          setDraft(String(value));
+          setEditing(true);
+        }}
+      >
+        {formatMoney(value)}
+      </button>
+    </div>
   );
 }
 
@@ -118,7 +116,7 @@ function ContributionCell({
   isCurrentUser?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
+  const [draftPercentage, setDraftPercentage] = useState(0);
   const utils = api.useUtils();
   const setPercentageMutation = api.contribution.setPercentage.useMutation({
     onSuccess: () => {
@@ -129,22 +127,83 @@ function ContributionCell({
 
   const percentage = contribution ? Number(contribution.percentage) : 0;
   const amount = costAmount * (percentage / 100);
+  const draftAmount = costAmount * (draftPercentage / 100);
+
+  const handleEnterEdit = () => {
+    setDraftPercentage(percentage);
+    setEditing(true);
+  };
 
   const handleSave = async () => {
-    const value = parseFloat(draft);
-    if (!Number.isNaN(value) && value >= 0 && value <= 100 && contribution) {
+    const p = draftPercentage;
+    if (!Number.isNaN(p) && p >= 0 && p <= 100 && contribution) {
       await setPercentageMutation.mutateAsync({
         costId,
         contributionId: contribution.id,
-        percentage: value,
+        percentage: p,
       });
       setEditing(false);
     }
   };
 
+  const handleAmountChange = (raw: string) => {
+    const parsed = parseFloat(raw);
+    if (Number.isNaN(parsed) || costAmount <= 0) return;
+    const p = (parsed / costAmount) * 100;
+    setDraftPercentage(Math.min(100, Math.max(0, p)));
+  };
+
+  if (isAdmin && editing) {
+    return (
+      <div className="flex flex-col items-end gap-2">
+        <Input
+          type="number"
+          min={0}
+          max={100}
+          step={0.5}
+          className="h-8 w-20 text-right"
+          value={draftPercentage}
+          onChange={(e) => setDraftPercentage(parseFloat(e.target.value) || 0)}
+          onBlur={() => void handleSave()}
+          onKeyDown={(e) => e.key === "Enter" && void handleSave()}
+        />
+        <Input
+          type="number"
+          min={0}
+          step={0.01}
+          className="h-8 w-24 text-right font-mono"
+          value={draftAmount}
+          onChange={(e) => handleAmountChange(e.target.value)}
+          onBlur={() => void handleSave()}
+          onKeyDown={(e) => e.key === "Enter" && void handleSave()}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="flex items-center justify-end gap-2">
+    <div className="flex flex-col items-end gap-1">
+      <span
+        className={cn(
+          "!text-sm sm:text-sm",
+          "text-muted-foreground",
+          isCurrentUser && "font-semibold text-secondary"
+        )}
+      >
+        {percentage}%
+      </span>
+      {isAdmin ? (
+        <button
+          type="button"
+          className={cn(
+            "cursor-pointer hover:underline !text-base sm:!text-2xl text-right font-zain",
+            isCurrentUser && "text-primary font-semibold"
+          )}
+          onClick={handleEnterEdit}
+        >
+          {formatMoney(amount)}
+        </button>
+      ) : (
         <span
           className={cn(
             "font-mono !text-base sm:!text-2xl",
@@ -153,64 +212,7 @@ function ContributionCell({
         >
           {formatMoney(amount)}
         </span>
-        {isAdmin && editing ? (
-          <span className="flex items-center gap-1">
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              step={0.5}
-              className="h-8 w-16"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={() => void handleSave()}
-              onKeyDown={(e) => e.key === "Enter" && void handleSave()}
-            />
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8"
-              onClick={() => void handleSave()}
-              disabled={setPercentageMutation.isPending}
-            >
-              <Pencil className="h-3 w-3" />
-            </Button>
-          </span>
-        ) : (
-          <span
-            className={cn(
-              "!text:sm sm:text-sm",
-              isAdmin
-                ? "cursor-pointer hover:underline"
-                : "text-muted-foreground",
-              isCurrentUser && "text-primary font-semibold"
-            )}
-            onClick={
-              isAdmin
-                ? () => {
-                    setDraft(String(percentage));
-                    setEditing(true);
-                  }
-                : undefined
-            }
-            onKeyDown={
-              isAdmin
-                ? (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setDraft(String(percentage));
-                      setEditing(true);
-                    }
-                  }
-                : undefined
-            }
-            role={isAdmin ? "button" : undefined}
-            tabIndex={isAdmin ? 0 : undefined}
-          >
-            {percentage}%
-          </span>
-        )}
-      </div>
+      )}
     </div>
   );
 }
@@ -282,7 +284,7 @@ function ExpensesTable({
         id: "expense",
         header: "Expense",
         cell: ({ getValue }) => (
-          <span className="font-medium sm:text-2xl">{getValue()}</span>
+          <span className="font-medium sm:text-2xl font-zain">{getValue()}</span>
         ),
       }
     );
@@ -398,7 +400,7 @@ function ExpensesTable({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
+                <TableHead key={header.id} className="text-right">
                   {flexRender(
                     header.column.columnDef.header,
                     header.getContext()
@@ -426,7 +428,7 @@ function ExpensesTable({
                     | ExpensesTableMeta
                     | undefined;
                   return (
-                    <TableCell key={cell.id} className={meta?.cellClassName}>
+                    <TableCell key={cell.id} className={cn(meta?.cellClassName, "text-right")}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -509,8 +511,9 @@ export function BudgieView({
     <div className={cn("space-y-6", className)}>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between px-4 py-0">
-          <div>
-            <CardTitle className="text-base sm:text-2xl">Expenses</CardTitle>
+          <div className="flex items-center gap-2">
+            <ReceiptText className="h-6 w-6 text-tertiary" />
+            <CardTitle className="text-base sm:text-2xl font-zain font-medium">Expenses</CardTitle>
           </div>
 
           {isAdmin && (

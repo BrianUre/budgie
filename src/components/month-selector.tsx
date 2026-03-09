@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/drawer";
 import { CreateNextMonthDialog } from "@/components/create-next-month-dialog";
 import { formatMonth } from "@/lib/utils";
-import { Trash2, Calendar } from "lucide-react";
+import { Trash2, Calendar, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -76,9 +76,10 @@ function MonthSelectorDesktop({
                   "basis-48 overflow-visible px-2 cursor-pointer hover:text-primary-hover group flex items-center justify-around group hover:bg-muted/50",
                   selectedMonthId === month.id && "text-primary"
                 )}
+                onClick={() => onSelectMonth(month.id)}
               >
                 <span className="font-medium flex items-center gap-2">
-                  <Calendar className={cn(
+                  <CalendarDays className={cn(
                     "h-4 w-4 group-hover:text-secondary-hover",
                     selectedMonthId === month.id && "text-secondary"
                     )} />

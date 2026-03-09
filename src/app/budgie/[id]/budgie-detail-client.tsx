@@ -7,7 +7,7 @@ import { useAuth } from "@clerk/nextjs";
 import { RedirectToSignIn } from "@clerk/nextjs";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, PanelRight } from "lucide-react";
+import { ArrowLeft, Bird, PanelRight } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { MonthSelector } from "@/components/month-selector";
 import { BudgieView } from "@/components/budgie-view";
@@ -57,6 +57,15 @@ export function BudgieDetailClient() {
     [costsForMonth]
   );
 
+  const contributorsWithSessionFirst = useMemo(() => {
+    if (!userId || contributors.length === 0) return contributors;
+    const sessionIndex = contributors.findIndex((c) => c.userId === userId);
+    if (sessionIndex <= 0) return contributors;
+    const sessionContributor = contributors[sessionIndex];
+    const rest = contributors.filter((_, i) => i !== sessionIndex);
+    return [sessionContributor!, ...rest];
+  }, [contributors, userId]);
+
   if (!isLoaded || budgieLoading || !id) {
     return (
       <main className="flex min-h-screen flex-col p-8">
@@ -93,8 +102,9 @@ export function BudgieDetailClient() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-base sm:text-2xl text-tertiary">
-            <span className="font-bold text-primary">Budgie:</span> {budgie.name}
+            <Bird className="h-6 w-6 text-tertiary" />
+          <h1 className="text-base sm:text-2xl text-tertiary font-atma">
+            <span className="font-semibold text-primary font-atma">Budgie:</span> {budgie.name}
           </h1>
           <div className="z-40 ml-auto sm:hidden">
             <SidebarTrigger>
@@ -119,15 +129,15 @@ export function BudgieDetailClient() {
           budgieId={id}
           selectedMonthId={selectedMonthId}
           isAdmin={isAdmin}
-          contributors={contributors}
+          contributors={contributorsWithSessionFirst}
           currentUserId={userId}
           costsForMonth={costsForMonth}
           />
 
           {/*
-        {contributors.length > 0 && (
+        {contributorsWithSessionFirst.length > 0 && (
           <TotalsPanel
-            contributors={contributors}
+            contributors={contributorsWithSessionFirst}
             costs={activeCosts}
             destinations={destinations}
             currentUserId={userId}
@@ -142,7 +152,7 @@ export function BudgieDetailClient() {
 
         <ContributorsList
           budgieId={id}
-          contributors={contributors}
+          contributors={contributorsWithSessionFirst}
           isAdmin={isAdmin}
         /> */}
       </div>

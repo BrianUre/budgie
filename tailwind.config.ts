@@ -19,6 +19,11 @@ const config = {
   		}
   	},
   	extend: {
+  		fontFamily: {
+  			atma: ["var(--font-atma)", "sans-serif"],
+  			shadows: ["var(--font-shadows-into-light)", "cursive"],
+  			zain: ["var(--font-zain)", "sans-serif"],
+  		},
   		colors: {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
@@ -31,12 +36,12 @@ const config = {
   				foreground: colors.white
   			},
   			secondary: {
-  				DEFAULT: colors.orange[500],
-				  hover: colors.orange[400],
+  				DEFAULT: colors.orange[600],
+				  hover: colors.orange[500],
   				foreground: colors.white
   			},
 				tertiary: {
-					DEFAULT: colors.sky[700],
+					DEFAULT: colors.cyan[700],
 					hover: colors.cyan[600],
 					foreground: colors.white
 				},
