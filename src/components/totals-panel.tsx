@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { ChartColumnIncreasing, CreditCard } from "lucide-react";
 
 export type TotalsPanelCost = {
   id: string;
@@ -109,7 +110,12 @@ export function TotalsPanel({
 
   return (
     <div className={cn("space-y-4", className)}>
-      <h3 className="text-sm font-medium text-muted-foreground">Totals</h3>
+      <div className="flex items-center gap-2">
+        <CreditCard
+          className="h-6 w-6 text-tertiary"
+        />
+      <h3 className="text-base sm:text-2xl font-zain font-medium">Payments</h3>
+      </div>
 
       <div className="flex flex-col gap-4">
         {/* First item: global total + per destination */}

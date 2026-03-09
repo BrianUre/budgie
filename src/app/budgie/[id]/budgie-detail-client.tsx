@@ -102,9 +102,12 @@ export function BudgieDetailClient() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-            <Bird className="h-6 w-6 text-tertiary" />
+          <Bird className="h-6 w-6 text-tertiary" />
           <h1 className="text-base sm:text-2xl text-tertiary font-atma">
-            <span className="font-semibold text-primary font-atma">Budgie:</span> {budgie.name}
+            <span className="font-semibold text-primary font-atma">
+              Budgie:
+            </span>{" "}
+            {budgie.name}
           </h1>
           <div className="z-40 ml-auto sm:hidden">
             <SidebarTrigger>
@@ -132,9 +135,10 @@ export function BudgieDetailClient() {
           contributors={contributorsWithSessionFirst}
           currentUserId={userId}
           costsForMonth={costsForMonth}
-          />
+        />
 
-          {/*
+        <Separator />
+
         {contributorsWithSessionFirst.length > 0 && (
           <TotalsPanel
             contributors={contributorsWithSessionFirst}
@@ -143,6 +147,7 @@ export function BudgieDetailClient() {
             currentUserId={userId}
           />
         )}
+        {/*
 
         <DestinationsCard
           budgieId={id}
