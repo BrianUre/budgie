@@ -85,7 +85,7 @@ export function BudgieDetailClient() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col sm:p-8">
+    <main className="flex min-h-screen flex-col sm:px-8">
       <div className="mx-auto w-full max-w-6xl space-y-2">
         <div className="flex items-center gap-2 py-2">
           <Link href="/">
@@ -112,8 +112,6 @@ export function BudgieDetailClient() {
           onSelectMonth={setSelectedMonthId}
           isAdmin={isAdmin}
         />
-
-        <Separator />
 
         <BudgieView
           budgieId={id}

@@ -386,7 +386,7 @@ export function BudgieView({
             />
           )}
         </CardHeader>
-        <CardContent className="overflow-x-auto b-dev">
+        <CardContent className="overflow-x-auto">
           <ExpensesTable
             costs={activeCosts}
             contributors={contributors}

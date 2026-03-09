@@ -131,7 +131,7 @@ export function CreateNextMonthDialog({
   };
 
   const defaultTrigger = (
-    <Button variant="outline" size="sm" disabled={createNextMutation.isPending}>
+    <Button variant="outline" size="sm" disabled={createNextMutation.isPending} className="border-none">
       <Plus className="h-4 w-4" />
       <span className="ml-2">Add next month</span>
     </Button>
