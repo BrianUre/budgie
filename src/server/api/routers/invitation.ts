@@ -48,6 +48,9 @@ export const invitationRouter = createTRPCRouter({
             message: "Invitation has already been used",
           });
         }
+        if (message.includes("different email")) {
+          throw new TRPCError({ code: "FORBIDDEN", message });
+        }
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
       }
     }),

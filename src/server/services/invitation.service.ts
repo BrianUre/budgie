@@ -90,6 +90,15 @@ export class InvitationService {
       throw new Error("Invitation has expired");
     }
 
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+    });
+    const invitedEmail = invitation.email.trim().toLowerCase();
+    const userEmail = user?.email?.trim().toLowerCase() ?? "";
+    if (userEmail !== invitedEmail) {
+      throw new Error("This invitation was sent to a different email address.");
+    }
+
     const existingContributor = await this.db.contributor.findFirst({
       where: { budgieId: invitation.budgieId, userId },
     });
@@ -102,9 +111,6 @@ export class InvitationService {
       return { budgieId: invitation.budgieId, alreadyContributor: true };
     }
 
-    const user = await this.db.user.findUnique({
-      where: { id: userId },
-    });
     const name = user?.name ?? user?.email ?? "Contributor";
 
     await this.db.$transaction(async (tx) => {
