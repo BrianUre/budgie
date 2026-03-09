@@ -16,6 +16,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -379,6 +380,23 @@ function ExpensesTable({
     getCoreRowModel: getCoreRowModel(),
   });
 
+  const { totalCost, contributorTotals } = useMemo(() => {
+    const total = costs.reduce((sum, c) => sum + Number(c.amount), 0);
+    const byContributor: Record<string, number> = {};
+    for (const contributor of contributors) {
+      let sum = 0;
+      for (const cost of costs) {
+        const contribution = cost.contributions.find(
+          (c: Contribution) => c.contributorId === contributor.id
+        );
+        const pct = contribution ? Number(contribution.percentage) : 0;
+        sum += Number(cost.amount) * (pct / 100);
+      }
+      byContributor[contributor.id] = sum;
+    }
+    return { totalCost: total, contributorTotals: byContributor };
+  }, [costs, contributors]);
+
   const cyclePrev = () => {
     setExtraColumnIndex((i) => (i <= 0 ? extraColumnOptionsCount - 1 : i - 1));
   };
@@ -440,6 +458,51 @@ function ExpensesTable({
             ))
           )}
         </TableBody>
+        {table.getRowModel().rows.length > 0 && (
+          <TableFooter>
+            <TableRow>
+              {table.getHeaderGroups()[0]?.headers.map((header) => {
+                const colId = header.column.id;
+                const isCurrentUserCol =
+                  !!currentUserId &&
+                  !!contributors.find(
+                    (c) => c.id === colId && c.userId === currentUserId
+                  );
+                if (colId === "expense") {
+                  return (
+                    <TableCell
+                      key={header.id}
+                      className="text-right font-medium text-xl font-zain"
+                    >
+                      Total
+                    </TableCell>
+                  );
+                }
+                if (colId === "cost") {
+                  return (
+                    <TableCell
+                      key={header.id}
+                      className="font-mono text-3xl text-right text-tertiary font-bold"
+                    >
+                      {formatMoney(totalCost)}
+                    </TableCell>
+                  );
+                }
+                return (
+                  <TableCell
+                    key={header.id}
+                    className={cn(
+                      "text-right text-3xl font-zain",
+                      isCurrentUserCol && "bg-primary/5 text-primary font-bold "
+                    )}
+                  >
+                    {formatMoney(contributorTotals[colId] ?? 0)}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          </TableFooter>
+        )}
       </Table>
       {isMobile && extraColumnOptionsCount > 1 && (
         <div className="flex items-center justify-center gap-2 py-2">
