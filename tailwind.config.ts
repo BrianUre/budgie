@@ -36,8 +36,8 @@ const config = {
   				foreground: colors.white
   			},
   			secondary: {
-  				DEFAULT: colors.orange[600],
-				  hover: colors.orange[500],
+  				DEFAULT: colors.yellow[600],
+				  hover: colors.yellow[500],
   				foreground: colors.white
   			},
 				tertiary: {
