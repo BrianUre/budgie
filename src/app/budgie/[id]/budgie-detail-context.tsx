@@ -6,7 +6,11 @@ type Contributor = {
   id: string;
   name: string | null;
   userId?: string | null;
-  user?: { name?: string | null; email?: string | null } | null;
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    imageUrl?: string | null;
+  } | null;
 };
 
 type Destination = {

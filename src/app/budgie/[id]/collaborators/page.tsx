@@ -12,7 +12,13 @@ export default function CollaboratorsTabPage() {
       contributors={contributorsWithSessionFirst.map((c) => ({
         id: c.id,
         name: c.name,
-        user: c.user?.email != null ? { email: c.user.email } : null,
+        user: c.user
+          ? {
+              email: c.user.email,
+              name: c.user.name,
+              imageUrl: c.user.imageUrl,
+            }
+          : null,
       }))}
       isAdmin={isAdmin}
     />
