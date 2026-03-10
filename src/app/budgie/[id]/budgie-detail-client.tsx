@@ -14,7 +14,7 @@ import { ExpensesView } from "@/components/expenses-view";
 import { ContributorsList } from "@/components/contributors-list";
 import { Separator } from "@/components/ui/separator";
 import { DestinationsCard } from "@/components/destinations-card";
-import { TotalsPanel } from "@/components/totals-panel";
+import { PaymentsPanel } from "@/components/payments-panel";
 
 export function BudgieDetailClient() {
   const params = useParams();
@@ -140,7 +140,7 @@ export function BudgieDetailClient() {
         <Separator />
 
         {contributorsWithSessionFirst.length > 0 && (
-          <TotalsPanel
+          <PaymentsPanel
             contributors={contributorsWithSessionFirst}
             costs={activeCosts}
             destinations={destinations}

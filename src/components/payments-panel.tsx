@@ -11,7 +11,7 @@ import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { ChartColumnIncreasing, CreditCard } from "lucide-react";
 
-export type TotalsPanelCost = {
+export type PaymentsPanelCost = {
   id: string;
   amount: unknown;
   destinationId?: string | null;
@@ -19,37 +19,37 @@ export type TotalsPanelCost = {
   contributions: Array<{ contributorId: string; percentage: unknown }>;
 };
 
-export type TotalsPanelContributor = {
+export type PaymentsPanelContributor = {
   id: string;
   name: string | null;
   userId?: string | null;
   user?: { name?: string | null; email?: string | null } | null;
 };
 
-export type Destination = {
+export type PaymentsPanelDestination = {
   id: string;
   name: string;
 };
 
-interface TotalsPanelProps {
-  contributors: TotalsPanelContributor[];
-  costs: TotalsPanelCost[];
-  destinations: Destination[];
+interface PaymentsPanelProps {
+  contributors: PaymentsPanelContributor[];
+  costs: PaymentsPanelCost[];
+  destinations: PaymentsPanelDestination[];
   currentUserId?: string | null;
   className?: string;
 }
 
-function contributorDisplayName(c: TotalsPanelContributor): string {
+function contributorDisplayName(c: PaymentsPanelContributor): string {
   return c.user?.name ?? c.user?.email ?? c.name ?? "—";
 }
 
-export function TotalsPanel({
+export function PaymentsPanel({
   contributors,
   costs,
   destinations,
   currentUserId,
   className,
-}: TotalsPanelProps) {
+}: PaymentsPanelProps) {
   const totalCostAmount = useMemo(
     () => costs.reduce((sum, cost) => sum + Number(cost.amount), 0),
     [costs]
