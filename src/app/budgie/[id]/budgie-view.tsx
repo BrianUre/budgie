@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { DestinationsCard } from "@/components/destinations-card";
 import { PaymentsPanel } from "@/components/payments-panel";
 
-export function BudgieDetailClient() {
+export function BudgieView() {
   const params = useParams();
   const { isSignedIn, isLoaded, userId } = useAuth();
   const id = params.id as string;

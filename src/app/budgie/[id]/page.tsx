@@ -1,5 +1,5 @@
-import { BudgieDetailClient } from "./budgie-detail-client";
+import { BudgieView } from "./budgie-view";
 
-export default function BudgieDetailPage() {
-  return <BudgieDetailClient />;
+export default function BudgieViewPage() {
+  return <BudgieView />;
 }
