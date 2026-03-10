@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Bird, PanelRight } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { MonthSelector } from "@/components/month-selector";
-import { BudgieView } from "@/components/budgie-view";
+import { ExpensesView } from "@/components/expenses-view";
 import { ContributorsList } from "@/components/contributors-list";
 import { Separator } from "@/components/ui/separator";
 import { DestinationsCard } from "@/components/destinations-card";
@@ -128,7 +128,7 @@ export function BudgieDetailClient() {
 
         <Separator />
 
-        <BudgieView
+        <ExpensesView
           budgieId={id}
           selectedMonthId={selectedMonthId}
           isAdmin={isAdmin}

@@ -533,7 +533,7 @@ function ExpensesTable({
   );
 }
 
-export function BudgieView({
+export function ExpensesView({
   budgieId,
   selectedMonthId,
   isAdmin,
