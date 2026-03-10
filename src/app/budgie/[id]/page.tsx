@@ -1,5 +1,9 @@
-import { BudgieView } from "./budgie-view";
+import { redirect } from "next/navigation";
 
-export default function BudgieViewPage() {
-  return <BudgieView />;
+export default function BudgieViewPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  redirect(`/budgie/${params.id}/expenses`);
 }

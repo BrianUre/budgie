@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useParams, usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -9,13 +11,13 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
-const TABS = [
-  "Months",
-  "Expenses",
-  "Totals",
-  "Destinations",
-  "Contributors",
+const TAB_ROUTES = [
+  { segment: "expenses", label: "Expenses" },
+  { segment: "payments", label: "Payments" },
+  { segment: "destinations", label: "Destinations" },
+  { segment: "collaborators", label: "Collaborators" },
 ] as const;
 
 export function BudgieSidebarLayout({
@@ -23,18 +25,27 @@ export function BudgieSidebarLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const params = useParams();
+  const pathname = usePathname();
+  const id = params.id as string;
+  const basePath = `/budgie/${id}`;
+
   return (
     <SidebarProvider defaultOpen={false}>
-      <Sidebar side="right">
+      <Sidebar side="right" className="md:hidden">
         <SidebarContent>
           <SidebarMenu>
-            {TABS.map((label) => (
-              <SidebarMenuItem key={label}>
-                <SidebarMenuButton type="button">
-                  {label}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {TAB_ROUTES.map(({ segment, label }) => {
+              const href = `${basePath}/${segment}`;
+              const isActive = pathname === href;
+              return (
+                <SidebarMenuItem key={segment}>
+                  <SidebarMenuButton asChild isActive={isActive}>
+                    <Link href={href}>{label}</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
