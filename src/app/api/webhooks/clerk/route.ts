@@ -35,6 +35,7 @@ export async function POST(request: Request) {
         email_addresses: { id: string; email_address: string }[];
         first_name: string | null;
         last_name: string | null;
+        image_url?: string | null;
       };
       const email =
         data.email_addresses?.find(
@@ -45,7 +46,8 @@ export async function POST(request: Request) {
       const name =
         [data.first_name, data.last_name].filter(Boolean).join(" ").trim() ||
         null;
-      await services.user.upsert(data.id, email, name);
+      const imageUrl = data.image_url ?? null;
+      await services.user.upsert(data.id, email, name, imageUrl);
       return new Response("OK", { status: 200 });
     }
 

@@ -21,7 +21,7 @@ export default async function DashboardLayout({
           .join(" ")
           .trim() || null;
       const services = createServices(db);
-      await services.user.upsert(userId, email, name);
+      await services.user.upsert(userId, email, name, clerkUser.imageUrl);
     } catch {
       // Non-fatal: tRPC will sync on first protected call
     }

@@ -47,7 +47,12 @@ const isAuthenticated = t.middleware(async ({ ctx, next }) => {
   const name =
     [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim() ||
     null;
-  await ctx.services.user.upsert(userId, email, name);
+  await ctx.services.user.upsert(
+    userId,
+    email,
+    name,
+    clerkUser.imageUrl
+  );
 
   return next({
     ctx: {
