@@ -12,6 +12,7 @@ import { DestinationManagementDialog } from "@/components/destination-management
 type Destination = {
   id: string;
   name: string | null;
+  iban?: string | null;
 };
 
 export function DestinationsCard({
@@ -43,13 +44,20 @@ export function DestinationsCard({
             {isAdmin && " Open Manage destinations to add one."}
           </p>
         ) : (
-          <ul className="flex flex-wrap gap-2">
+          <ul className="space-y-2">
             {destinations.map((d) => (
               <li
                 key={d.id}
-                className="rounded-md border bg-muted/50 px-3 py-1.5 text-sm"
+                className="rounded-lg border p-3"
               >
-                {d.name}
+                <p className="font-medium">{d.name ?? "—"}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {d.iban?.trim() ? (
+                    <span className="font-mono">{d.iban}</span>
+                  ) : (
+                    "No IBAN"
+                  )}
+                </p>
               </li>
             ))}
           </ul>

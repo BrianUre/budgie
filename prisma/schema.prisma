@@ -125,6 +125,7 @@ model Destination {
   id        String   @id @default(uuid())
   budgieId  String
   name      String
+  iban      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

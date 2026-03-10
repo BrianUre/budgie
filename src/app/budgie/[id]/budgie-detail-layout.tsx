@@ -108,7 +108,11 @@ export function BudgieDetailLayout({
     isAdmin,
     contributors,
     contributorsWithSessionFirst,
-    destinations: destinations.map((d) => ({ id: d.id, name: d.name ?? null })),
+    destinations: destinations.map((d) => ({
+      id: d.id,
+      name: d.name ?? null,
+      iban: d.iban ?? null,
+    })),
     selectedMonthId,
     setSelectedMonthId,
     userId: userId ?? null,

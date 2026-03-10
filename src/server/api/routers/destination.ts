@@ -41,11 +41,16 @@ export const destinationRouter = createTRPCRouter({
       z.object({
         budgieId: z.string(),
         name: z.string().min(1).max(200),
+        iban: z.string().max(50).optional().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
-      return ctx.services.destination.create(input.budgieId, input.name);
+      return ctx.services.destination.create(
+        input.budgieId,
+        input.name,
+        input.iban
+      );
     }),
 
   update: protectedProcedure
@@ -53,13 +58,18 @@ export const destinationRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         name: z.string().min(1).max(200),
+        iban: z.string().max(50).optional().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const destination = await ctx.services.destination.getById(input.id);
       if (!destination) throw new TRPCError({ code: "NOT_FOUND" });
       await requireBudgieAdmin(ctx.services, destination.budgieId, ctx.auth.userId);
-      return ctx.services.destination.update(input.id, input.name);
+      return ctx.services.destination.update(
+        input.id,
+        input.name,
+        input.iban
+      );
     }),
 
   delete: protectedProcedure

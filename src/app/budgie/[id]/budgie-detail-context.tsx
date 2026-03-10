@@ -16,6 +16,7 @@ type Contributor = {
 type Destination = {
   id: string;
   name: string | null;
+  iban?: string | null;
 };
 
 export type BudgieDetailContextValue = {

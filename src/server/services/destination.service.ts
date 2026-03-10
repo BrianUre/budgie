@@ -16,16 +16,23 @@ export class DestinationService {
     });
   }
 
-  async create(budgieId: string, name: string) {
+  async create(budgieId: string, name: string, iban?: string | null) {
     return this.db.destination.create({
-      data: { budgieId, name: name.trim() },
+      data: {
+        budgieId,
+        name: name.trim(),
+        ...(iban !== undefined && { iban: iban?.trim() || null }),
+      },
     });
   }
 
-  async update(id: string, name: string) {
+  async update(id: string, name: string, iban?: string | null) {
     return this.db.destination.update({
       where: { id },
-      data: { name: name.trim() },
+      data: {
+        name: name.trim(),
+        ...(iban !== undefined && { iban: iban?.trim() || null }),
+      },
     });
   }
 
