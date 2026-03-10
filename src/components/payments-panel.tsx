@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -9,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { ChartColumnIncreasing, CreditCard } from "lucide-react";
+import { CreditCard } from "lucide-react";
 
 export type PaymentsPanelCost = {
   id: string;
@@ -23,7 +24,11 @@ export type PaymentsPanelContributor = {
   id: string;
   name: string | null;
   userId?: string | null;
-  user?: { name?: string | null; email?: string | null } | null;
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    imageUrl?: string | null;
+  } | null;
 };
 
 export type PaymentsPanelDestination = {
@@ -41,6 +46,16 @@ interface PaymentsPanelProps {
 
 function contributorDisplayName(c: PaymentsPanelContributor): string {
   return c.user?.name ?? c.user?.email ?? c.name ?? "—";
+}
+
+function contributorInitials(c: PaymentsPanelContributor): string {
+  const name = contributorDisplayName(c);
+  if (name === "—") return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0]![0] + parts[parts.length - 1]![0]).toUpperCase().slice(0, 2);
+  }
+  return name.slice(0, 2).toUpperCase();
 }
 
 export function PaymentsPanel({
@@ -145,48 +160,67 @@ export function PaymentsPanel({
           </CardContent>
         </Card>
 
-        {/* One item per contributor: contributor total + per destination */}
-        {contributors.map((contributor) => (
-          <Card
-            key={contributor.id}
-            className={cn(
-              "w-full",
-              currentUserId &&
-                contributor.userId === currentUserId &&
-                "ring-2 ring-primary"
-            )}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">
-                {contributorDisplayName(contributor)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-xl font-semibold">
-                {formatMoney(totalByContributor.get(contributor.id) ?? 0)}
-              </p>
-              {destinationEntries.length > 0 && (
-                <ul className="space-y-1.5 border-t pt-3 text-sm">
-                  {destinationEntries.map(({ key, label }) => (
-                    <li
-                      key={key ?? "__none__"}
-                      className="flex justify-between gap-2"
-                    >
-                      <span className="text-muted-foreground">{label}</span>
-                      <span className="font-mono">
-                        {formatMoney(
-                          totalByContributorByDestination
-                            .get(contributor.id)
-                            ?.get(key ?? null) ?? 0
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+        {/* One item per contributor: narrow vertical cards in a grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {contributors.map((contributor) => (
+            <Card
+              key={contributor.id}
+              className={cn(
+                "w-full flex flex-col",
+                currentUserId &&
+                  contributor.userId === currentUserId &&
+                  "ring-2 ring-primary"
               )}
-            </CardContent>
-          </Card>
-        ))}
+            >
+              <CardHeader className="pb-2 flex flex-col items-center text-center">
+                <div className="mb-2 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
+                  {contributor.user?.imageUrl ? (
+                    <Image
+                      src={contributor.user.imageUrl}
+                      alt=""
+                      width={64}
+                      height={64}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-lg font-medium text-muted-foreground">
+                      {contributorInitials(contributor)}
+                    </span>
+                  )}
+                </div>
+                <CardTitle className="text-base">
+                  {contributorDisplayName(contributor)}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 flex-1">
+                <p className="text-xl font-semibold text-center">
+                  {formatMoney(totalByContributor.get(contributor.id) ?? 0)}
+                </p>
+                {destinationEntries.length > 0 && (
+                  <ul className="space-y-1.5 border-t pt-3 text-sm">
+                    {destinationEntries.map(({ key, label }) => (
+                      <li
+                        key={key ?? "__none__"}
+                        className="flex justify-between gap-2"
+                      >
+                        <span className="text-muted-foreground truncate">
+                          {label}
+                        </span>
+                        <span className="font-mono shrink-0">
+                          {formatMoney(
+                            totalByContributorByDestination
+                              .get(contributor.id)
+                              ?.get(key ?? null) ?? 0
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
