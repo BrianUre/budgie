@@ -8,6 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CreditCard } from "lucide-react";
@@ -34,6 +39,7 @@ export type PaymentsPanelContributor = {
 export type PaymentsPanelDestination = {
   id: string;
   name: string;
+  iban?: string | null;
 };
 
 interface PaymentsPanelProps {
@@ -44,12 +50,12 @@ interface PaymentsPanelProps {
   className?: string;
 }
 
-function contributorDisplayName(c: PaymentsPanelContributor): string {
-  return c.user?.name ?? c.user?.email ?? c.name ?? "—";
+function contributorDisplayName(contributor: PaymentsPanelContributor): string {
+  return contributor.user?.name ?? contributor.user?.email ?? contributor.name ?? "—";
 }
 
-function contributorInitials(c: PaymentsPanelContributor): string {
-  const name = contributorDisplayName(c);
+function contributorInitials(contributor: PaymentsPanelContributor): string {
+  const name = contributorDisplayName(contributor);
   if (name === "—") return "?";
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) {
@@ -86,7 +92,7 @@ export function PaymentsPanel({
       let total = 0;
       for (const cost of costs) {
         const contribution = cost.contributions?.find(
-          (c) => c.contributorId === contributor.id
+          (contrib) => contrib.contributorId === contributor.id
         );
         if (contribution) {
           total +=
@@ -104,7 +110,7 @@ export function PaymentsPanel({
       const inner = new Map<string | null, number>();
       for (const cost of costs) {
         const contribution = cost.contributions?.find(
-          (c) => c.contributorId === contributor.id
+          (contrib) => contrib.contributorId === contributor.id
         );
         if (!contribution) continue;
         const destKey = cost.destinationId ?? cost.destination?.id ?? null;
@@ -118,10 +124,25 @@ export function PaymentsPanel({
   }, [contributors, costs]);
 
   const hasNoDestination = totalByDestination.has(null);
-  const destinationEntries = [
-    ...destinations.map((d) => ({ key: d.id as string | null, label: d.name })),
-    ...(hasNoDestination ? [{ key: null as string | null, label: "No destination" }] : []),
-  ];
+  const destinationRows = useMemo(() => {
+    const rows: Array<{
+      id: string | null;
+      name: string;
+      iban: string | null;
+    }> = destinations.map((destination) => ({
+      id: destination.id,
+      name: destination.name,
+      iban: destination.iban?.trim() || null,
+    }));
+    if (hasNoDestination) {
+      rows.push({
+        id: null,
+        name: "No destination",
+        iban: null,
+      });
+    }
+    return rows;
+  }, [destinations, hasNoDestination]);
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -142,16 +163,38 @@ export function PaymentsPanel({
             <p className="text-xl font-semibold">
               {formatMoney(totalCostAmount)}
             </p>
-            {destinationEntries.length > 0 && (
+            {destinationRows.length > 0 && (
               <ul className="space-y-1.5 border-t pt-3 text-sm">
-                {destinationEntries.map(({ key, label }) => (
+                {destinationRows.map(({ id, name, iban }) => (
                   <li
-                    key={key ?? "__none__"}
+                    key={id ?? "__none__"}
                     className="flex justify-between gap-2"
                   >
-                    <span className="text-muted-foreground">{label}</span>
+                    {iban ? (
+                      <HoverCard openDelay={200} closeDelay={100}>
+                        <HoverCardTrigger asChild>
+                          <span className="text-muted-foreground cursor-help underline decoration-dotted underline-offset-2">
+                            {name}
+                          </span>
+                        </HoverCardTrigger>
+                        <HoverCardContent
+                          side="top"
+                          align="start"
+                          className="w-auto max-w-sm"
+                        >
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              IBAN
+                            </p>
+                            <p className="font-mono text-sm">{iban}</p>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                    ) : (
+                      <span className="text-muted-foreground">{name}</span>
+                    )}
                     <span className="font-mono">
-                      {formatMoney(totalByDestination.get(key ?? null) ?? 0)}
+                      {formatMoney(totalByDestination.get(id ?? null) ?? 0)}
                     </span>
                   </li>
                 ))}
@@ -196,21 +239,43 @@ export function PaymentsPanel({
                 <p className="text-xl font-semibold text-center">
                   {formatMoney(totalByContributor.get(contributor.id) ?? 0)}
                 </p>
-                {destinationEntries.length > 0 && (
+                {destinationRows.length > 0 && (
                   <ul className="space-y-1.5 border-t pt-3 text-sm">
-                    {destinationEntries.map(({ key, label }) => (
+                    {destinationRows.map(({ id, name, iban }) => (
                       <li
-                        key={key ?? "__none__"}
+                        key={id ?? "__none__"}
                         className="flex justify-between gap-2"
                       >
-                        <span className="text-muted-foreground truncate">
-                          {label}
-                        </span>
+                        {iban ? (
+                          <HoverCard openDelay={200} closeDelay={100}>
+                            <HoverCardTrigger asChild>
+                              <span className="text-muted-foreground truncate cursor-help underline decoration-dotted underline-offset-2">
+                                {name}
+                              </span>
+                            </HoverCardTrigger>
+                            <HoverCardContent
+                              side="top"
+                              align="start"
+                              className="w-auto max-w-sm"
+                            >
+                              <div className="space-y-1">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  IBAN
+                                </p>
+                                <p className="font-mono text-sm">{iban}</p>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
+                        ) : (
+                          <span className="text-muted-foreground truncate">
+                            {name}
+                          </span>
+                        )}
                         <span className="font-mono shrink-0">
                           {formatMoney(
                             totalByContributorByDestination
                               .get(contributor.id)
-                              ?.get(key ?? null) ?? 0
+                              ?.get(id ?? null) ?? 0
                           )}
                         </span>
                       </li>
