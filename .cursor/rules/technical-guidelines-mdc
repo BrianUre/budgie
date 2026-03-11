@@ -1,0 +1,8 @@
+---
+description: Read and follow project technical guidelines when implementing or refactoring
+alwaysApply: true
+---
+
+# Technical guidelines
+
+When changing or adding code in this project, **read the root file `docs/TECHNICAL_GUIDELINES.md`** and follow its architecture and conventions (naming, shadcn + Tailwind, TanStack forms/tables, tRPC → services only, JSDoc on public API).
