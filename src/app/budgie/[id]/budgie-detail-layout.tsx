@@ -1,6 +1,10 @@
 "use client";
 
-import { useParams, usePathname } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useSelectedLayoutSegment,
+} from "next/navigation";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
@@ -11,7 +15,7 @@ import { ArrowLeft, Bird, PanelRight } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { MonthSelector } from "@/components/month-selector";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BudgieDetailProvider,
   type BudgieDetailContextValue,
@@ -99,6 +103,12 @@ export function BudgieDetailLayout({
   }
 
   const basePath = `/budgie/${id}`;
+  const segment = useSelectedLayoutSegment();
+  const currentSegment = (
+    segment && TAB_ROUTES.some((r) => r.segment === segment)
+      ? segment
+      : TAB_ROUTES[0]!.segment
+  ) as (typeof TAB_ROUTES)[number]["segment"];
   const isExpensesOrPayments =
     pathname === `${basePath}/expenses` || pathname === `${basePath}/payments`;
 
@@ -146,25 +156,19 @@ export function BudgieDetailLayout({
           <Separator />
 
           {/* Tab bar: desktop only */}
-          <nav className="hidden md:flex gap-1 border-b" aria-label="Budgie sections">
-            {TAB_ROUTES.map(({ segment, label }) => {
-              const href = `${basePath}/${segment}`;
-              const isActive = pathname === href;
-              return (
-                <Link
-                  key={segment}
-                  href={href}
-                  className={cn(
-                    "px-4 py-2 text-sm font-medium rounded-t-md transition-colors",
-                    isActive
-                      ? "bg-primary/10 text-primary border-b-2 border-primary -mb-px"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
-                >
-                  {label}
-                </Link>
-              );
-            })}
+          <nav className="hidden md:block" aria-label="Budgie sections">
+            <Tabs value={currentSegment}>
+              <TabsList className="grid w-full grid-cols-4">
+                {TAB_ROUTES.map(({ segment, label }) => {
+                  const href = `${basePath}/${segment}`;
+                  return (
+                    <TabsTrigger key={segment} value={segment} asChild>
+                      <Link href={href}>{label}</Link>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </Tabs>
           </nav>
 
           {isExpensesOrPayments && (
