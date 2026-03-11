@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  type ColumnDef,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
@@ -22,29 +21,12 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn, formatMoney } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { CostEdit } from "@/components/cost-edit";
-import { ContributionCell } from "@/components/contribution-cell";
-
-type Contributor = {
-  id: string;
-  name: string | null;
-  userId?: string | null;
-  user?: { name?: string | null; email?: string | null } | null;
-};
-
-type Contribution = {
-  id: string;
-  costId: string;
-  contributorId: string;
-  percentage: unknown;
-};
-
-type CostRow = {
-  id: string;
-  amount: unknown;
-  expense: { name: string } | null;
-  contributions: Contribution[];
-};
+import {
+  buildExpensesTableColumns,
+  type CostRow,
+  type ExpensesTableContributor,
+} from "@/components/expenses-table-columns";
+import type { CostsForClient } from "@/lib/trpc/client";
 
 export type ExpensesTableMeta = {
   costMutation: ReturnType<typeof api.cost.updateAmount.useMutation>;
@@ -52,11 +34,69 @@ export type ExpensesTableMeta = {
   budgieId: string;
   selectedMonthId: string;
   currentUserId: string | null;
-  contributors: Contributor[];
-  contributor?: Contributor;
+  contributors: ExpensesTableContributor[];
+  contributor?: ExpensesTableContributor;
   isCurrentUser?: boolean;
   cellClassName?: string;
 };
+
+function ExpensesTableFooter({
+  headers,
+  totalCost,
+  contributorTotals,
+  contributors,
+  currentUserId,
+}: {
+  headers: { id: string }[];
+  totalCost: number;
+  contributorTotals: Record<string, number>;
+  contributors: ExpensesTableContributor[];
+  currentUserId: string | null;
+}) {
+  return (
+    <TableRow>
+      {headers.map((header) => {
+        const colId = header.id;
+        const isCurrentUserCol =
+          !!currentUserId &&
+          !!contributors.find(
+            (c) => c.id === colId && c.userId === currentUserId
+          );
+        if (colId === "expense") {
+          return (
+            <TableCell
+              key={header.id}
+              className="text-right font-medium text-xl font-zain"
+            >
+              Total
+            </TableCell>
+          );
+        }
+        if (colId === "cost") {
+          return (
+            <TableCell
+              key={header.id}
+              className="font-mono text-3xl text-right text-tertiary font-bold"
+            >
+              {formatMoney(totalCost)}
+            </TableCell>
+          );
+        }
+        return (
+          <TableCell
+            key={header.id}
+            className={cn(
+              "text-right text-3xl font-zain",
+              isCurrentUserCol && "bg-primary/5 text-primary font-bold "
+            )}
+          >
+            {formatMoney(contributorTotals[colId] ?? 0)}
+          </TableCell>
+        );
+      })}
+    </TableRow>
+  );
+}
 
 export function ExpensesTable({
   costs,
@@ -66,8 +106,8 @@ export function ExpensesTable({
   selectedMonthId,
   currentUserId,
 }: {
-  costs: CostRow[];
-  contributors: Contributor[];
+  costs: CostsForClient;
+  contributors: ExpensesTableContributor[];
   isAdmin: boolean;
   budgieId: string;
   selectedMonthId: string;
@@ -87,103 +127,26 @@ export function ExpensesTable({
   });
 
   const columnHelper = createColumnHelper<CostRow>();
-  const sharedMeta: Omit<
-    ExpensesTableMeta,
-    "contributor" | "isCurrentUser" | "cellClassName"
-  > = {
-    costMutation,
-    isAdmin,
-    budgieId,
-    selectedMonthId,
-    currentUserId: currentUserId ?? null,
-    contributors,
-  };
-
-  const allColumns = useMemo<ColumnDef<CostRow, unknown>[]>(() => {
-    const expenseCol = columnHelper.accessor(
-      (row) => row.expense?.name ?? "—",
-      {
-        id: "expense",
-        header: "Expense",
-        cell: ({ getValue }) => (
-          <span className="font-medium sm:text-2xl font-zain">{getValue()}</span>
-        ),
-      }
-    );
-
-    const costCol = columnHelper.accessor((row) => row.amount, {
-      id: "cost",
-      header: "Cost",
-      meta: { ...sharedMeta, cellClassName: "font-mono text-2xl" },
-      cell: ({ row, column }) => {
-        const meta = column.columnDef.meta as ExpensesTableMeta | undefined;
-        if (!meta) return null;
-        const amount = Number(row.original.amount);
-        return meta.isAdmin ? (
-          <CostEdit
-            value={amount}
-            onSave={(v) =>
-              meta.costMutation.mutateAsync({
-                budgieId: meta.budgieId,
-                costId: row.original.id,
-                amount: v,
-              })
-            }
-            isPending={meta.costMutation.isPending}
-          />
-        ) : (
-          formatMoney(amount)
-        );
-      },
-    });
-
-    const contributorCols: ColumnDef<CostRow, unknown>[] = contributors.map(
-      (contributor) => {
-        const isCurrentUser =
-          !!currentUserId && contributor.userId === currentUserId;
-        return columnHelper.display({
-          id: contributor.id,
-          header: contributor.user?.name ?? contributor.name ?? "—",
-          meta: {
-            ...sharedMeta,
-            contributor,
-            isCurrentUser,
-            cellClassName: isCurrentUser ? "bg-primary/5" : undefined,
-          },
-          cell: ({ row, column }) => {
-            const meta = column.columnDef.meta as ExpensesTableMeta | undefined;
-            if (!meta?.contributor) return null;
-            const contribution = row.original.contributions.find(
-              (c: Contribution) => c.contributorId === meta.contributor!.id
-            );
-            return (
-              <ContributionCell
-                costId={row.original.id}
-                costAmount={Number(row.original.amount)}
-                contribution={contribution}
-                isAdmin={meta.isAdmin}
-                monthId={meta.selectedMonthId}
-                budgieId={meta.budgieId}
-                isCurrentUser={meta.isCurrentUser}
-              />
-            );
-          },
-        });
-      }
-    );
-
-    return [expenseCol, costCol, ...contributorCols] as ColumnDef<
-      CostRow,
-      unknown
-    >[];
-  }, [
-    contributors,
-    isAdmin,
-    budgieId,
-    selectedMonthId,
-    currentUserId,
-    costMutation,
-  ]);
+  const allColumns = useMemo(
+    () =>
+      buildExpensesTableColumns({
+        columnHelper,
+        costMutation,
+        isAdmin,
+        budgieId,
+        selectedMonthId,
+        currentUserId: currentUserId ?? null,
+        contributors,
+      }),
+    [
+      contributors,
+      isAdmin,
+      budgieId,
+      selectedMonthId,
+      currentUserId,
+      costMutation,
+    ]
+  );
 
   const extraColumnOptionsCount = 1 + contributors.length;
   const columns = useMemo(() => {
@@ -202,16 +165,16 @@ export function ExpensesTable({
   });
 
   const { totalCost, contributorTotals } = useMemo(() => {
-    const total = costs.reduce((sum, c) => sum + Number(c.amount), 0);
+    const total = costs.reduce((sum, c) => sum + c.amount, 0);
     const byContributor: Record<string, number> = {};
     for (const contributor of contributors) {
       let sum = 0;
       for (const cost of costs) {
         const contribution = cost.contributions.find(
-          (c: Contribution) => c.contributorId === contributor.id
+          (c) => c.contributorId === contributor.id
         );
-        const pct = contribution ? Number(contribution.percentage) : 0;
-        sum += Number(cost.amount) * (pct / 100);
+        const pct = contribution ? contribution.percentage : 0;
+        sum += cost.amount * (pct / 100);
       }
       byContributor[contributor.id] = sum;
     }
@@ -225,6 +188,7 @@ export function ExpensesTable({
     setExtraColumnIndex((i) => (i >= extraColumnOptionsCount - 1 ? 0 : i + 1));
   };
 
+  const firstHeaderGroup = table.getHeaderGroups()[0];
   const extraColumnLabel =
     extraColumnIndex === 0
       ? "Cost"
@@ -238,14 +202,25 @@ export function ExpensesTable({
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="text-right">
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </TableHead>
-              ))}
+              {headerGroup.headers.map((header) => {
+                const isExpenseOrCost =
+                  header.column.id === "expense" ||
+                  header.column.id === "cost";
+                return (
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      "text-right",
+                      isExpenseOrCost ? "px-4 py-3" : "p-0"
+                    )}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </TableHead>
+                );
+              })}
             </TableRow>
           ))}
         </TableHeader>
@@ -267,7 +242,10 @@ export function ExpensesTable({
                     | ExpensesTableMeta
                     | undefined;
                   return (
-                    <TableCell key={cell.id} className={cn(meta?.cellClassName, "text-right")}>
+                    <TableCell
+                      key={cell.id}
+                      className={cn(meta?.cellClassName, "text-right")}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -279,49 +257,15 @@ export function ExpensesTable({
             ))
           )}
         </TableBody>
-        {table.getRowModel().rows.length > 0 && (
+        {table.getRowModel().rows.length > 0 && firstHeaderGroup && (
           <TableFooter>
-            <TableRow>
-              {table.getHeaderGroups()[0]?.headers.map((header) => {
-                const colId = header.column.id;
-                const isCurrentUserCol =
-                  !!currentUserId &&
-                  !!contributors.find(
-                    (c) => c.id === colId && c.userId === currentUserId
-                  );
-                if (colId === "expense") {
-                  return (
-                    <TableCell
-                      key={header.id}
-                      className="text-right font-medium text-xl font-zain"
-                    >
-                      Total
-                    </TableCell>
-                  );
-                }
-                if (colId === "cost") {
-                  return (
-                    <TableCell
-                      key={header.id}
-                      className="font-mono text-3xl text-right text-tertiary font-bold"
-                    >
-                      {formatMoney(totalCost)}
-                    </TableCell>
-                  );
-                }
-                return (
-                  <TableCell
-                    key={header.id}
-                    className={cn(
-                      "text-right text-3xl font-zain",
-                      isCurrentUserCol && "bg-primary/5 text-primary font-bold "
-                    )}
-                  >
-                    {formatMoney(contributorTotals[colId] ?? 0)}
-                  </TableCell>
-                );
-              })}
-            </TableRow>
+            <ExpensesTableFooter
+              headers={firstHeaderGroup.headers}
+              totalCost={totalCost}
+              contributorTotals={contributorTotals}
+              contributors={contributors}
+              currentUserId={currentUserId ?? null}
+            />
           </TableFooter>
         )}
       </Table>

@@ -4,15 +4,9 @@ import { useState } from "react";
 import { api } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
 import { cn, formatMoney } from "@/lib/utils";
+import type { CostRow } from "@/components/expenses-table-columns";
 
-type Contribution = {
-  id: string;
-  costId: string;
-  contributorId: string;
-  percentage: unknown;
-};
-
-export function ContributionCell({
+export function CostContributionCell({
   costId,
   costAmount,
   contribution,
@@ -23,7 +17,7 @@ export function ContributionCell({
 }: {
   costId: string;
   costAmount: number;
-  contribution: Contribution | undefined;
+  contribution: CostRow["contributions"][number] | undefined;
   isAdmin: boolean;
   monthId: string;
   budgieId: string;
@@ -39,7 +33,7 @@ export function ContributionCell({
     },
   });
 
-  const percentage = contribution ? Number(contribution.percentage) : 0;
+  const percentage = contribution ? contribution.percentage : 0;
   const amount = costAmount * (percentage / 100);
   const draftAmount = costAmount * (draftPercentage / 100);
 

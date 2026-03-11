@@ -9,7 +9,15 @@ export const costRouter = createTRPCRouter({
       const month = await ctx.services.month.getById(input.monthId);
       if (!month) throw new TRPCError({ code: "NOT_FOUND" });
 
-      return ctx.services.cost.listForMonth(input.monthId);
+      const costs = await ctx.services.cost.listForMonth(input.monthId);
+      return costs.map((cost) => ({
+        ...cost,
+        amount: Number(cost.amount),
+        contributions: cost.contributions.map((c) => ({
+          ...c,
+          percentage: Number(c.percentage),
+        })),
+      }));
     }),
 
   updateAmount: protectedProcedure

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/utils";
 
-export function CostEdit({
+export function CostAmountEdit({
   value,
   onSave,
   isPending,

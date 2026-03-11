@@ -5,14 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ManageExpensesDialog } from "@/components/manage-expenses-dialog";
 import { cn } from "@/lib/utils";
 import { ReceiptText } from "lucide-react";
-import { Costs } from "@/server/services/cost.service";
+import type { CostsForClient } from "@/lib/trpc/client";
 import { ExpensesTable } from "@/components/expenses-table";
 
 type Contributor = {
   id: string;
   name: string | null;
   userId?: string | null;
-  user?: { name?: string | null; email?: string | null } | null;
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    imageUrl?: string | null;
+  } | null;
 };
 
 export function ExpensesView({
@@ -30,7 +34,7 @@ export function ExpensesView({
   contributors: Contributor[];
   currentUserId?: string | null;
   className?: string;
-  costsForMonth: Costs;
+  costsForMonth: CostsForClient;
 }) {
   const activeCosts = useMemo(
     () => costsForMonth.filter((cost) => cost.isActive),
