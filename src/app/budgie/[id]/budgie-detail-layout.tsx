@@ -102,15 +102,14 @@ export function BudgieDetailLayout({
     );
   }
 
-  const basePath = `/budgie/${id}`;
+  const basePath =
+    "/" + pathname.split("/").filter(Boolean).slice(0, 2).join("/");
   const segment = useSelectedLayoutSegment();
   const currentSegment = (
-    segment && TAB_ROUTES.some((r) => r.segment === segment)
+    segment && TAB_ROUTES.some((route) => route.segment === segment)
       ? segment
       : TAB_ROUTES[0]!.segment
-  ) as (typeof TAB_ROUTES)[number]["segment"];
-  const isExpensesOrPayments =
-    pathname === `${basePath}/expenses` || pathname === `${basePath}/payments`;
+  );
 
   const contextValue: BudgieDetailContextValue = {
     budgieId: id,
@@ -160,7 +159,6 @@ export function BudgieDetailLayout({
             <Tabs value={currentSegment}>
               <TabsList className="grid w-full grid-cols-4" variant="line">
                 {TAB_ROUTES.map(({ segment, label }) => {
-                  console.log("segment", segment);
                   const href = `${basePath}/${segment}`;
                   return (
                     <TabsTrigger key={segment} value={segment} asChild>
@@ -172,17 +170,13 @@ export function BudgieDetailLayout({
             </Tabs>
           </nav>
 
-          {isExpensesOrPayments && (
-            <>
-              <MonthSelector
-                budgieId={id}
-                selectedMonthId={selectedMonthId}
-                onSelectMonth={setSelectedMonthId}
-                isAdmin={isAdmin}
-              />
-              <Separator />
-            </>
-          )}
+          <MonthSelector
+            budgieId={id}
+            selectedMonthId={selectedMonthId}
+            onSelectMonth={setSelectedMonthId}
+            isAdmin={isAdmin}
+          />
+          <Separator />
 
           {children}
         </div>
