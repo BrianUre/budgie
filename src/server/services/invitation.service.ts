@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import { createHash, randomBytes } from "crypto";
+import type { UserService } from "./user.service";
 
 const DEFAULT_EXPIRY_HOURS = 48;
 
@@ -8,8 +9,18 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
+export type PendingInvitationWithUser = {
+  id: string;
+  email: string;
+  createdAt: Date;
+  user: { name: string | null; imageUrl: string | null } | null;
+};
+
 export class InvitationService {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(
+    private readonly db: PrismaClient,
+    private readonly userService: UserService
+  ) {}
 
   buildInvitationUrl(token: string): string {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -18,13 +29,24 @@ export class InvitationService {
 
   async listPendingForBudgie(
     budgieId: string
-  ): Promise<Array<{ id: string; email: string; createdAt: Date }>> {
+  ): Promise<PendingInvitationWithUser[]> {
     const list = await this.db.invitation.findMany({
       where: { budgieId, resolved: false },
       orderBy: { createdAt: "desc" },
       select: { id: true, email: true, createdAt: true },
     });
-    return list;
+    const result: PendingInvitationWithUser[] = await Promise.all(
+      list.map(async (inv) => {
+        const user = await this.userService.getByEmail(inv.email);
+        return {
+          id: inv.id,
+          email: inv.email,
+          createdAt: inv.createdAt,
+          user,
+        };
+      })
+    );
+    return result;
   }
 
   async createForBudgie(

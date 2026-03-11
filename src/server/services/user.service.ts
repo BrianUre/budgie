@@ -36,4 +36,15 @@ export class UserService {
       where: { id },
     });
   }
+
+  async getByEmail(email: string): Promise<{
+    name: string | null;
+    imageUrl: string | null;
+  } | null> {
+    const user = await this.db.user.findFirst({
+      where: { email: { equals: email.trim(), mode: "insensitive" } },
+      select: { name: true, imageUrl: true },
+    });
+    return user ?? null;
+  }
 }

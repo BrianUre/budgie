@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useForm } from "@tanstack/react-form";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
@@ -15,14 +16,30 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, X } from "lucide-react";
 
 type AddMode = "person" | "entity";
+
+function invitationInitials(inv: {
+  email: string;
+  user?: { name: string | null } | null;
+}): string {
+  const name = inv.user?.name ?? inv.email;
+  if (!name.trim()) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0]![0] + parts[parts.length - 1]![0])
+      .toUpperCase()
+      .slice(0, 2);
+  }
+  return name.slice(0, 2).toUpperCase();
+}
 
 export function AddContributorDialog({ budgieId }: { budgieId: string }) {
   const utils = api.useUtils();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [mode, setMode] = useState<AddMode>("entity");
+  const [mode, setMode] = useState<AddMode>("person");
 
   const { data: pendingInvitations = [] } =
     api.invitation.listPendingForBudgie.useQuery(
@@ -82,14 +99,14 @@ export function AddContributorDialog({ budgieId }: { budgieId: string }) {
   const handleOpenChange = (open: boolean) => {
     setDialogOpen(open);
     if (!open) {
-      setMode("entity");
+      setMode("person");
       entityForm.reset();
       personForm.reset();
     }
   };
 
-  const handleModeChange = (newMode: AddMode) => {
-    setMode(newMode);
+  const handleTabChange = (value: string) => {
+    setMode(value as AddMode);
     entityForm.reset();
     personForm.reset();
   };
@@ -118,28 +135,18 @@ export function AddContributorDialog({ budgieId }: { budgieId: string }) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-2 py-2">
-          <Button
-            type="button"
-            variant={mode === "person" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleModeChange("person")}
-          >
-            Invite a person
-          </Button>
-          <Button
-            type="button"
-            variant={mode === "entity" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleModeChange("entity")}
-          >
-            Add entity
-          </Button>
-        </div>
-
-        {mode === "person" ? (
-          <>
-            <div className="grid gap-2 py-2">
+        <Tabs
+          value={mode}
+          onValueChange={handleTabChange}
+          defaultValue="person"
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="person">Invite somebody</TabsTrigger>
+            <TabsTrigger value="entity">Add entity</TabsTrigger>
+          </TabsList>
+          <TabsContent value="person" className="mt-4 space-y-4">
+            <div className="grid gap-2">
               <h4 className="text-sm font-medium">Pending invitations</h4>
               {pendingInvitations.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
@@ -150,9 +157,26 @@ export function AddContributorDialog({ budgieId }: { budgieId: string }) {
                   {pendingInvitations.map((inv) => (
                     <li
                       key={inv.id}
-                      className="flex items-center justify-between gap-2 rounded-md border px-2 py-1.5"
+                      className="flex items-center gap-3 rounded-md border px-2 py-1.5"
                     >
-                      <span>{inv.email}</span>
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
+                        {inv.user?.imageUrl ? (
+                          <Image
+                            src={inv.user.imageUrl}
+                            alt=""
+                            width={32}
+                            height={32}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {invitationInitials(inv)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="min-w-0 flex-1 truncate">
+                        {inv.user?.name ?? inv.email}
+                      </span>
                       <Button
                         type="button"
                         variant="ghost"
@@ -172,9 +196,10 @@ export function AddContributorDialog({ budgieId }: { budgieId: string }) {
                             }
                           );
                         }}
-                        aria-label={`Cancel invitation for ${inv.email}`}
+                        aria-label='Cancel invitation'
+                        title='Cancel invitation'
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <X className="h-4 w-4" />
                       </Button>
                     </li>
                   ))}
@@ -268,43 +293,44 @@ export function AddContributorDialog({ budgieId }: { budgieId: string }) {
                 </personForm.Subscribe>
               </DialogFooter>
             </form>
-          </>
-        ) : (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              entityForm.handleSubmit();
-            }}
-          >
-            <div className="grid gap-4 py-4">
-              <entityForm.Field name="name">
-                {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor="entityName">Name</Label>
-                    <Input
-                      id="entityName"
-                      value={field.state.value}
-                      onChange={(e) =>
-                        field.handleChange(e.target.value)
-                      }
-                      placeholder="e.g. Landlord"
-                      required
-                    />
-                  </div>
-                )}
-              </entityForm.Field>
-            </div>
-            <DialogFooter>
-              <Button
-                type="submit"
-                disabled={contributorMutation.isPending}
-              >
-                {contributorMutation.isPending ? "Adding…" : "Add"}
-              </Button>
-            </DialogFooter>
-          </form>
-        )}
+          </TabsContent>
+          <TabsContent value="entity" className="mt-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                entityForm.handleSubmit();
+              }}
+            >
+              <div className="grid gap-4 py-4">
+                <entityForm.Field name="name">
+                  {(field) => (
+                    <div className="grid gap-2">
+                      <Label htmlFor="entityName">Name</Label>
+                      <Input
+                        id="entityName"
+                        value={field.state.value}
+                        onChange={(e) =>
+                          field.handleChange(e.target.value)
+                        }
+                        placeholder="e.g. Landlord"
+                        required
+                      />
+                    </div>
+                  )}
+                </entityForm.Field>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  disabled={contributorMutation.isPending}
+                >
+                  {contributorMutation.isPending ? "Adding…" : "Add"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

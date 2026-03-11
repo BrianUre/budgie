@@ -21,7 +21,7 @@ const TAB_ROUTES = [
   { segment: "expenses", label: "Expenses" },
   { segment: "payments", label: "Payments" },
   { segment: "destinations", label: "Destinations" },
-  { segment: "collaborators", label: "Collaborators" },
+  { segment: "collaborators", label: "Contributors" },
 ] as const;
 
 export function BudgieDetailLayout({

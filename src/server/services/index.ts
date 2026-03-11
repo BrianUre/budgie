@@ -14,6 +14,7 @@ import { UserService } from "./user.service";
 export function createServices(db: PrismaClient) {
   const emailContent = new EmailContentService();
   const email = new EmailService(emailContent);
+  const user = new UserService(db);
   return {
     budgie: new BudgieService(db),
     month: new MonthService(db),
@@ -22,8 +23,8 @@ export function createServices(db: PrismaClient) {
     contributor: new ContributorService(db),
     contribution: new ContributionService(db),
     destination: new DestinationService(db),
-    user: new UserService(db),
-    invitation: new InvitationService(db),
+    user,
+    invitation: new InvitationService(db, user),
     emailContent,
     email,
   };

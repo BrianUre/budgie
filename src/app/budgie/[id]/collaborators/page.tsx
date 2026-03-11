@@ -2,9 +2,15 @@
 
 import { ContributorsList } from "@/components/contributors-list";
 import { useBudgieDetail } from "../budgie-detail-context";
+import { api } from "@/lib/trpc/client";
 
 export default function CollaboratorsTabPage() {
   const { budgieId, isAdmin, contributorsWithSessionFirst } = useBudgieDetail();
+  const { data: pendingInvitations = [] } =
+    api.invitation.listPendingForBudgie.useQuery(
+      { budgieId },
+      { enabled: !!budgieId }
+    );
 
   return (
     <ContributorsList
@@ -20,6 +26,7 @@ export default function CollaboratorsTabPage() {
             }
           : null,
       }))}
+      pendingInvitations={pendingInvitations}
       isAdmin={isAdmin}
     />
   );
