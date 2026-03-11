@@ -110,7 +110,14 @@ export function ContributorsList({
             below.
           </CardDescription>
         </div>
-        {isAdmin && <AddContributorDialog budgieId={budgieId} />}
+        {isAdmin && (
+          <AddContributorDialog
+            budgieId={budgieId}
+            contributorEmails={contributors
+              .map((c) => c.user?.email)
+              .filter((e): e is string => Boolean(e))}
+          />
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         <section>

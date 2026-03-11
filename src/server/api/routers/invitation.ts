@@ -131,6 +131,12 @@ export const invitationRouter = createTRPCRouter({
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to create invitation";
+        if (message.includes("already a contributor")) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This email is already a contributor",
+          });
+        }
         if (message.includes("already pending")) {
           throw new TRPCError({
             code: "CONFLICT",

@@ -158,8 +158,9 @@ export function BudgieDetailLayout({
           {/* Tab bar: desktop only */}
           <nav className="hidden md:block" aria-label="Budgie sections">
             <Tabs value={currentSegment}>
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-4" variant="line">
                 {TAB_ROUTES.map(({ segment, label }) => {
+                  console.log("segment", segment);
                   const href = `${basePath}/${segment}`;
                   return (
                     <TabsTrigger key={segment} value={segment} asChild>

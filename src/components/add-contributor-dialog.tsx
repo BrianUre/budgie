@@ -36,7 +36,13 @@ function invitationInitials(inv: {
   return name.slice(0, 2).toUpperCase();
 }
 
-export function AddContributorDialog({ budgieId }: { budgieId: string }) {
+export function AddContributorDialog({
+  budgieId,
+  contributorEmails = [],
+}: {
+  budgieId: string;
+  contributorEmails?: string[];
+}) {
   const utils = api.useUtils();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mode, setMode] = useState<AddMode>("person");
@@ -111,12 +117,16 @@ export function AddContributorDialog({ budgieId }: { budgieId: string }) {
     personForm.reset();
   };
 
-  const isEmailPending = (email: string) => {
+  const isEmailTaken = (email: string) => {
     const normalized = email.trim().toLowerCase();
     if (!normalized) return false;
-    return pendingInvitations.some(
+    const inContributors = contributorEmails.some(
+      (e) => e.trim().toLowerCase() === normalized
+    );
+    const inPending = pendingInvitations.some(
       (p) => p.email.trim().toLowerCase() === normalized
     );
+    return inContributors || inPending;
   };
 
   return (
@@ -218,8 +228,8 @@ export function AddContributorDialog({ budgieId }: { budgieId: string }) {
                   name="inviteeEmail"
                   validators={{
                     onChange: ({ value }) => {
-                      if (isEmailPending(String(value ?? ""))) {
-                        return "This email already has a pending invitation.";
+                      if (isEmailTaken(String(value ?? ""))) {
+                        return "This email is already a contributor or has a pending invitation.";
                       }
                       return undefined;
                     },
@@ -246,7 +256,7 @@ export function AddContributorDialog({ budgieId }: { budgieId: string }) {
                       {invitationMutation.isError &&
                         invitationMutation.error.data?.code === "CONFLICT" && (
                           <p className="text-destructive text-sm">
-                            This email already has a pending invitation.
+                            {invitationMutation.error.message}
                           </p>
                         )}
                     </div>
@@ -281,7 +291,7 @@ export function AddContributorDialog({ budgieId }: { budgieId: string }) {
                     const disabled =
                       Boolean(invitationMutation.isPending) ||
                       Boolean(isSubmitting) ||
-                      isEmailPending(String(inviteeEmail ?? ""));
+                      isEmailTaken(String(inviteeEmail ?? ""));
                     return (
                       <Button type="submit" disabled={disabled}>
                         {invitationMutation.isPending || isSubmitting

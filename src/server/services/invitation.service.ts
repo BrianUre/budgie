@@ -55,14 +55,28 @@ export class InvitationService {
     invitedByUserId: string,
     invitationMessage?: string
   ): Promise<{ invitation: { id: string }; token: string }> {
-    const existing = await this.db.invitation.findFirst({
+    const normalizedEmail = email.trim();
+
+    const existingContributor = await this.db.contributor.findFirst({
       where: {
         budgieId,
-        email: { equals: email, mode: "insensitive" },
+        user: {
+          email: { equals: normalizedEmail, mode: "insensitive" },
+        },
+      },
+    });
+    if (existingContributor) {
+      throw new Error("This email is already a contributor");
+    }
+
+    const existingInvitation = await this.db.invitation.findFirst({
+      where: {
+        budgieId,
+        email: { equals: normalizedEmail, mode: "insensitive" },
         resolved: false,
       },
     });
-    if (existing) {
+    if (existingInvitation) {
       throw new Error("An invitation for this email is already pending");
     }
 
