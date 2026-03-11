@@ -249,7 +249,7 @@ export function ContributorsList({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive -dev"
                       disabled={cancellingId === inv.id}
                       onClick={() => {
                         setCancellingId(inv.id);
@@ -264,10 +264,10 @@ export function ContributorsList({
                           }
                         );
                       }}
-                      aria-label={`Cancel invitation for ${inv.email}`}
-                      title={`Cancel invitation for ${inv.email}`}
+                      aria-label={'Cancel invitation'}
+                      title={'Cancel invitation'}
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-8 w-8" />
                     </Button>
                   </li>
                 ))}

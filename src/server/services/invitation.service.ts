@@ -36,12 +36,12 @@ export class InvitationService {
       select: { id: true, email: true, createdAt: true },
     });
     const result: PendingInvitationWithUser[] = await Promise.all(
-      list.map(async (inv) => {
-        const user = await this.userService.getByEmail(inv.email);
+      list.map(async (invitation) => {
+        const user = await this.userService.getByEmail(invitation.email);
         return {
-          id: inv.id,
-          email: inv.email,
-          createdAt: inv.createdAt,
+          id: invitation.id,
+          email: invitation.email,
+          createdAt: invitation.createdAt,
           user,
         };
       })
