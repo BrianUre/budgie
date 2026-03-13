@@ -133,7 +133,13 @@ When you see hand-written interfaces or inline object types that describe DB or 
 
 ---
 
-## 7. Existing setup (reference)
+## 7. Renaming files (Git)
+
+- **Use `git mv` when renaming or moving files:** Prefer `git mv <old-path> <new-path>` instead of renaming in the editor or filesystem and then staging the result. Git records the change as a rename, so history and blame (e.g. `git log --follow`, `git blame`) stay correct and diffs are clearer.
+
+---
+
+## 8. Existing setup (reference)
 
 - **tRPC context** (`src/server/api/trpc.ts`): Builds `ctx` with `db`, `auth`, and `services` (from `createServices(db)`).
 - **UI primitives** (`src/components/ui/`): button, card, dialog, input, label, select, table, tabs, tooltip, etc. Use these and extend via variants before adding new primitives.
