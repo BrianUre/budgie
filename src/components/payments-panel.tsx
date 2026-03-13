@@ -13,6 +13,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { Separator } from "@/components/ui/separator";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CreditCard } from "lucide-react";
@@ -165,39 +166,54 @@ export function PaymentsPanel({
             </p>
             {destinationRows.length > 0 && (
               <ul className="space-y-1.5 border-t pt-3 text-sm">
-                {destinationRows.map(({ id, name, iban }) => (
-                  <li
-                    key={id ?? "__none__"}
-                    className="flex justify-between gap-2"
-                  >
-                    {iban ? (
-                      <HoverCard openDelay={200} closeDelay={100}>
-                        <HoverCardTrigger asChild>
-                          <span className="text-muted-foreground cursor-help underline decoration-dotted underline-offset-2">
-                            {name}
-                          </span>
-                        </HoverCardTrigger>
-                        <HoverCardContent
-                          side="top"
-                          align="start"
-                          className="w-auto max-w-sm"
-                        >
-                          <div className="space-y-1">
-                            <p className="text-xs font-medium text-muted-foreground">
-                              IBAN
-                            </p>
-                            <p className="font-mono text-sm">{iban}</p>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
-                    ) : (
-                      <span className="text-muted-foreground">{name}</span>
-                    )}
-                    <span className="font-mono">
-                      {formatMoney(totalByDestination.get(id ?? null) ?? 0)}
-                    </span>
-                  </li>
-                ))}
+                {destinationRows
+                  .filter((row): row is typeof row & { id: string } => row.id !== null)
+                  .map(({ id, name, iban }) => (
+                    <li
+                      key={id}
+                      className="flex justify-between gap-2"
+                    >
+                      {iban ? (
+                        <HoverCard openDelay={200} closeDelay={100}>
+                          <HoverCardTrigger asChild>
+                            <span className="text-muted-foreground cursor-help underline decoration-dotted underline-offset-2">
+                              {name}
+                            </span>
+                          </HoverCardTrigger>
+                          <HoverCardContent
+                            side="top"
+                            align="start"
+                            className="w-auto max-w-sm"
+                          >
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">
+                                IBAN
+                              </p>
+                              <p className="font-mono text-sm">{iban}</p>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      ) : (
+                        <span className="text-muted-foreground">{name}</span>
+                      )}
+                      <span className="font-mono">
+                        {formatMoney(totalByDestination.get(id) ?? 0)}
+                      </span>
+                    </li>
+                  ))}
+                {hasNoDestination && (
+                  <>
+                    <li className="list-none py-0 my-1.5">
+                      <Separator />
+                    </li>
+                    <li className="flex justify-between gap-2 text-red-500">
+                      <span>No destination</span>
+                      <span className="font-mono">
+                        {formatMoney(totalByDestination.get(null) ?? 0)}
+                      </span>
+                    </li>
+                  </>
+                )}
               </ul>
             )}
           </CardContent>
@@ -241,45 +257,64 @@ export function PaymentsPanel({
                 </p>
                 {destinationRows.length > 0 && (
                   <ul className="space-y-1.5 border-t pt-3 text-sm">
-                    {destinationRows.map(({ id, name, iban }) => (
-                      <li
-                        key={id ?? "__none__"}
-                        className="flex justify-between gap-2"
-                      >
-                        {iban ? (
-                          <HoverCard openDelay={200} closeDelay={100}>
-                            <HoverCardTrigger asChild>
-                              <span className="text-muted-foreground truncate cursor-help underline decoration-dotted underline-offset-2">
-                                {name}
-                              </span>
-                            </HoverCardTrigger>
-                            <HoverCardContent
-                              side="top"
-                              align="start"
-                              className="w-auto max-w-sm"
-                            >
-                              <div className="space-y-1">
-                                <p className="text-xs font-medium text-muted-foreground">
-                                  IBAN
-                                </p>
-                                <p className="font-mono text-sm">{iban}</p>
-                              </div>
-                            </HoverCardContent>
-                          </HoverCard>
-                        ) : (
-                          <span className="text-muted-foreground truncate">
-                            {name}
-                          </span>
-                        )}
-                        <span className="font-mono shrink-0">
-                          {formatMoney(
-                            totalByContributorByDestination
-                              .get(contributor.id)
-                              ?.get(id ?? null) ?? 0
+                    {destinationRows
+                      .filter((row): row is typeof row & { id: string } => row.id !== null)
+                      .map(({ id, name, iban }) => (
+                        <li
+                          key={id}
+                          className="flex justify-between gap-2"
+                        >
+                          {iban ? (
+                            <HoverCard openDelay={200} closeDelay={100}>
+                              <HoverCardTrigger asChild>
+                                <span className="text-muted-foreground truncate cursor-help underline decoration-dotted underline-offset-2">
+                                  {name}
+                                </span>
+                              </HoverCardTrigger>
+                              <HoverCardContent
+                                side="top"
+                                align="start"
+                                className="w-auto max-w-sm"
+                              >
+                                <div className="space-y-1">
+                                  <p className="text-xs font-medium text-muted-foreground">
+                                    IBAN
+                                  </p>
+                                  <p className="font-mono text-sm">{iban}</p>
+                                </div>
+                              </HoverCardContent>
+                            </HoverCard>
+                          ) : (
+                            <span className="text-muted-foreground truncate">
+                              {name}
+                            </span>
                           )}
-                        </span>
-                      </li>
-                    ))}
+                          <span className="font-mono shrink-0">
+                            {formatMoney(
+                              totalByContributorByDestination
+                                .get(contributor.id)
+                                ?.get(id) ?? 0
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    {hasNoDestination && (
+                      <>
+                        <li className="list-none py-0 my-1.5">
+                          <Separator />
+                        </li>
+                        <li className="flex justify-between gap-2 text-red-500">
+                          <span className="truncate">No destination</span>
+                          <span className="font-mono shrink-0">
+                            {formatMoney(
+                              totalByContributorByDestination
+                                .get(contributor.id)
+                                ?.get(null) ?? 0
+                            )}
+                          </span>
+                        </li>
+                      </>
+                    )}
                   </ul>
                 )}
               </CardContent>
