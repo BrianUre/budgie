@@ -2,6 +2,14 @@
 
 **Purpose:** This document is the primary context for architecture and conventions in this codebase. It should be read and followed whenever implementing or changing features.
 
+**Guidelines vs current state:** This repo was not started with these guidelines written down. Much of the existing code does not yet conform. The sections below describe the **target** architecture and conventions. When working in the codebase—especially when creating or updating **plans**—treat the guidelines as the desired state, not a description of the current state.
+
+**Using this document for planning:** When building or executing plans, identify places where the current implementation **differs** from these guidelines and **highlight** them to the user. The work may involve **changing** existing code to conform, not only adding new code. When you encounter non-conforming code (e.g. hand-written types instead of derived ones, logic in routers, etc.), **surface it** and **ask the user**:
+- **Option A:** Refactor by root so the area conforms to the guidelines now.
+- **Option B:** Temporarily follow or expand the current (non-conforming) pattern and schedule a separate refactor or “conformance pass” in a later plan.
+
+Do not assume one or the other; present the deviation and ask.
+
 ---
 
 ## 1. Variable and symbol naming
@@ -113,7 +121,18 @@ Client / React components
 
 ---
 
-## 6. Existing setup (reference)
+## 6. Types for database and API objects
+
+Prefer **derived** types over hand-written interfaces so types stay in sync with the schema and procedures. Do not duplicate DB/API shapes as manual interfaces unless there is a clear reason (e.g. a deliberate subset or view for a specific UI).
+
+- **Client usage (React, hooks, client components):** Derive types from **tRPC**. Use the app’s tRPC type helpers (e.g. `RouterOutputs`, `RouterInputs`) keyed by router and procedure. Example: the type for “budgie returned by getById” is `RouterOutputs['budgie']['getById']`. This matches exactly what the client receives and stays correct when procedures or services change.
+- **Server usage (services, server-only code):** Derive types from the **service layer** and **Prisma**. Use the return types of service methods, or Prisma’s generated types (e.g. `Prisma.BudgieGetPayload<{ include: { … } }>`) where the service returns Prisma output. Services own the DB; types for DB-backed objects on the server should come from there, not from hand-coded interfaces.
+
+When you see hand-written interfaces or inline object types that describe DB or API shapes, treat that as a deviation from these guidelines (see **Using this document for planning** above): highlight it and ask whether to refactor to derived types now or to follow the current pattern and fix in a later plan.
+
+---
+
+## 7. Existing setup (reference)
 
 - **tRPC context** (`src/server/api/trpc.ts`): Builds `ctx` with `db`, `auth`, and `services` (from `createServices(db)`).
 - **UI primitives** (`src/components/ui/`): button, card, dialog, input, label, select, table, tabs, tooltip, etc. Use these and extend via variants before adding new primitives.
