@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { api } from "@/lib/trpc/client";
+import type { DestinationListItem } from "@/server/api/routers/destination";
+import type { DestinationType } from "@/types/destination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +17,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -24,11 +33,10 @@ import {
 } from "@/components/ui/table";
 import { Pencil } from "lucide-react";
 
-type DestinationRow = {
-  id: string;
-  name: string;
-  iban?: string | null;
-};
+const DESTINATION_TYPE_OPTIONS: { value: DestinationType; label: string }[] = [
+  { value: "bank_account", label: "Bank account" },
+  { value: "bizum", label: "Bizum" },
+];
 
 interface DestinationManagementDialogProps {
   budgieId: string;
@@ -47,7 +55,11 @@ export function DestinationManagementDialog({
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editRecipientName, setEditRecipientName] = useState("");
+  const [editType, setEditType] = useState<DestinationType>("bank_account");
   const [editIban, setEditIban] = useState("");
+  const [editSwift, setEditSwift] = useState("");
+  const [editPhone, setEditPhone] = useState("");
 
   const createMutation = api.destination.create.useMutation({
     onSuccess: () => {
@@ -63,23 +75,39 @@ export function DestinationManagementDialog({
   });
 
   const form = useForm({
-    defaultValues: { name: "", iban: "" },
+    defaultValues: {
+      name: "",
+      recipientName: "",
+      type: "bank_account" as DestinationType,
+      iban: "",
+      swift: "",
+      phone: "",
+    },
     onSubmit: async ({ value }) => {
       const name = value.name.trim();
-      if (!name) return;
+      const recipientName = value.recipientName.trim() || name;
+      if (!name || !recipientName) return;
       await createMutation.mutateAsync({
         budgieId,
         name,
-        iban: value.iban?.trim() || null,
+        recipientName,
+        type: value.type,
+        iban: value.iban?.trim() ?? null,
+        swift: value.swift?.trim() ?? null,
+        phone: value.phone?.trim() ?? null,
       });
       form.reset();
     },
   });
 
-  const startEditing = (d: DestinationRow) => {
-    setEditingId(d.id);
-    setEditName(d.name);
-    setEditIban(d.iban ?? "");
+  const startEditing = (destination: DestinationListItem) => {
+    setEditingId(destination.id);
+    setEditName(destination.name);
+    setEditRecipientName(destination.recipientName ?? destination.name);
+    setEditType((destination.type as DestinationType) ?? "bank_account");
+    setEditIban(destination.iban ?? "");
+    setEditSwift(destination.swift ?? "");
+    setEditPhone(destination.phone ?? "");
   };
 
   const cancelEditing = () => {
@@ -89,11 +117,16 @@ export function DestinationManagementDialog({
   const saveEditing = () => {
     if (!editingId) return;
     const name = editName.trim();
-    if (!name) return;
+    const recipientName = editRecipientName.trim() || name;
+    if (!name || !recipientName) return;
     updateMutation.mutate({
       id: editingId,
       name,
-      iban: editIban.trim() || null,
+      recipientName,
+      type: editType,
+      iban: editType === "bank_account" ? editIban.trim() || null : null,
+      swift: editType === "bank_account" ? editSwift.trim() || null : null,
+      phone: editType === "bizum" ? editPhone.trim() || null : null,
     });
   };
 
@@ -126,46 +159,129 @@ export function DestinationManagementDialog({
           >
             <div className="space-y-2">
               <Label>Add new destination</Label>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex flex-col gap-3">
                 <form.Field name="name">
                   {(field) => (
-                    <Input
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="e.g. Landlord, Utilities"
-                      className="flex-1"
-                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="add-name" className="text-xs">Name</Label>
+                      <Input
+                        id="add-name"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        placeholder="e.g. Landlord, Utilities"
+                      />
+                    </div>
                   )}
                 </form.Field>
-                <form.Field name="iban">
+                <form.Field name="recipientName">
                   {(field) => (
-                    <Input
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="IBAN (optional)"
-                      className="flex-1 font-mono"
-                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="add-recipientName" className="text-xs">Recipient name</Label>
+                      <Input
+                        id="add-recipientName"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        placeholder="Optional, defaults to Name"
+                      />
+                    </div>
                   )}
                 </form.Field>
+                <form.Field name="type">
+                  {(field) => (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Type</Label>
+                      <Select
+                        value={field.state.value}
+                        onValueChange={(v) => field.handleChange(v as DestinationType)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DESTINATION_TYPE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </form.Field>
+                <form.Subscribe selector={(state) => state.values.type}>
+                  {(type) =>
+                    type === "bizum" ? (
+                      <form.Field name="phone">
+                        {(field) => (
+                          <div className="space-y-1">
+                            <Label htmlFor="add-phone" className="text-xs">Phone (optional)</Label>
+                            <Input
+                              id="add-phone"
+                              value={field.state.value}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              placeholder="Phone"
+                            />
+                          </div>
+                        )}
+                      </form.Field>
+                    ) : (
+                      <>
+                        <form.Field name="iban">
+                          {(field) => (
+                            <div className="space-y-1">
+                              <Label htmlFor="add-iban" className="text-xs">IBAN (optional)</Label>
+                              <Input
+                                id="add-iban"
+                                value={field.state.value}
+                                onChange={(e) => field.handleChange(e.target.value)}
+                                placeholder="IBAN"
+                                className="font-mono"
+                              />
+                            </div>
+                          )}
+                        </form.Field>
+                        <form.Field name="swift">
+                          {(field) => (
+                            <div className="space-y-1">
+                              <Label htmlFor="add-swift" className="text-xs">SWIFT (optional)</Label>
+                              <Input
+                                id="add-swift"
+                                value={field.state.value}
+                                onChange={(e) => field.handleChange(e.target.value)}
+                                placeholder="SWIFT"
+                                className="font-mono"
+                              />
+                            </div>
+                          )}
+                        </form.Field>
+                      </>
+                    )
+                  }
+                </form.Subscribe>
                 <form.Subscribe
                   selector={(state) => [
                     state.values.name,
+                    state.values.recipientName,
+                    state.values.type,
                     state.isSubmitting,
                   ]}
                 >
-                  {([name, isSubmitting]) => (
-                    <Button
-                      type="submit"
-                      size="sm"
-                      disabled={Boolean(
-                        isSubmitting ||
-                          createMutation.isPending ||
-                          (typeof name !== "string" || !String(name).trim())
-                      )}
-                    >
-                      {createMutation.isPending ? "Adding…" : "Add"}
-                    </Button>
-                  )}
+                  {([name, recipientName, type, isSubmitting]) => {
+                    const n = typeof name === "string" ? name.trim() : "";
+                    const r = typeof recipientName === "string" ? recipientName.trim() : n;
+                    const valid = n.length > 0 && (r.length > 0 || n.length > 0);
+                    return (
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={Boolean(
+                          isSubmitting || createMutation.isPending || !valid
+                        )}
+                      >
+                        {createMutation.isPending ? "Adding…" : "Add"}
+                      </Button>
+                    );
+                  }}
                 </form.Subscribe>
               </div>
             </div>
@@ -182,30 +298,73 @@ export function DestinationManagementDialog({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>IBAN</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Details</TableHead>
                     <TableHead className="w-[80px]"> </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(destinations as DestinationRow[]).map((d) => (
+                  {destinations.map((d) => (
                     <TableRow key={d.id}>
                       {editingId === d.id ? (
                         <>
                           <TableCell>
-                            <Input
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              placeholder="Name"
-                              className="h-8"
-                            />
+                            <div className="space-y-1">
+                              <Input
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                placeholder="Name"
+                                className="h-8"
+                              />
+                              <Input
+                                value={editRecipientName}
+                                onChange={(e) => setEditRecipientName(e.target.value)}
+                                placeholder="Recipient name"
+                                className="h-8"
+                              />
+                            </div>
                           </TableCell>
                           <TableCell>
-                            <Input
-                              value={editIban}
-                              onChange={(e) => setEditIban(e.target.value)}
-                              placeholder="IBAN"
-                              className="h-8 font-mono"
-                            />
+                            <Select
+                              value={editType}
+                              onValueChange={(v) => setEditType(v as DestinationType)}
+                            >
+                              <SelectTrigger className="h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DESTINATION_TYPE_OPTIONS.map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            {editType === "bizum" ? (
+                              <Input
+                                value={editPhone}
+                                onChange={(e) => setEditPhone(e.target.value)}
+                                placeholder="Phone"
+                                className="h-8"
+                              />
+                            ) : (
+                              <div className="flex flex-col gap-1">
+                                <Input
+                                  value={editIban}
+                                  onChange={(e) => setEditIban(e.target.value)}
+                                  placeholder="IBAN"
+                                  className="h-8 font-mono"
+                                />
+                                <Input
+                                  value={editSwift}
+                                  onChange={(e) => setEditSwift(e.target.value)}
+                                  placeholder="SWIFT"
+                                  className="h-8 font-mono"
+                                />
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
@@ -223,7 +382,9 @@ export function DestinationManagementDialog({
                                 size="sm"
                                 className="h-8 px-2"
                                 disabled={
-                                  !editName.trim() || updateMutation.isPending
+                                  !editName.trim() ||
+                                  !(editRecipientName.trim() || editName.trim()) ||
+                                  updateMutation.isPending
                                 }
                                 onClick={saveEditing}
                               >
@@ -234,9 +395,25 @@ export function DestinationManagementDialog({
                         </>
                       ) : (
                         <>
-                          <TableCell className="font-medium">{d.name}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{d.name}</div>
+                            {d.recipientName && d.recipientName !== d.name && (
+                              <div className="text-muted-foreground text-xs">
+                                {d.recipientName}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-muted-foreground text-sm">
+                              {DESTINATION_TYPE_OPTIONS.find((o) => o.value === d.type)?.label ?? d.type}
+                            </span>
+                          </TableCell>
                           <TableCell className="font-mono text-muted-foreground text-sm">
-                            {d.iban?.trim() ?? "—"}
+                            {d.type === "bizum"
+                              ? (d.phone?.trim() ?? "—")
+                              : [d.iban?.trim(), d.swift?.trim()]
+                                  .filter(Boolean)
+                                  .join(" / ") || "—"}
                           </TableCell>
                           <TableCell>
                             <Button

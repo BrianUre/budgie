@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { DestinationListItem } from "@/server/api/routers/destination";
 
 type Contributor = {
   id: string;
@@ -13,11 +14,7 @@ type Contributor = {
   } | null;
 };
 
-type Destination = {
-  id: string;
-  name: string | null;
-  iban?: string | null;
-};
+export type Destination = DestinationListItem;
 
 export type BudgieDetailContextValue = {
   budgieId: string;

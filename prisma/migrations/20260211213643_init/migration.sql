@@ -49,7 +49,11 @@ CREATE TABLE "destinations" (
     "id" TEXT NOT NULL,
     "budgieId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "recipientName" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
     "iban" TEXT,
+    "swift" TEXT,
+    "phone" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

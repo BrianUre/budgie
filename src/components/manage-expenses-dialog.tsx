@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
@@ -107,8 +107,11 @@ export function ManageExpensesDialog({
     },
   });
 
+  /** Kept in component state so it survives form reset (TanStack Form can revert to defaultValues after async reset). */
+  const [addExpenseDestinationId, setAddExpenseDestinationId] = useState<string | null>(null);
+
   const expenseForm = useForm({
-    defaultValues: { name: "", initialAmount: 0, destinationId: null as string | null },
+    defaultValues: { name: "", initialAmount: 0 },
     onSubmit: async ({ value }) => {
       if (!selectedMonthId) return;
       await expenseMutation.mutateAsync({
@@ -116,13 +119,10 @@ export function ManageExpensesDialog({
         monthId: selectedMonthId,
         name: value.name.trim(),
         initialAmount: value.initialAmount,
-        destinationId: value.destinationId,
+        destinationId: addExpenseDestinationId,
       });
-      expenseForm.reset({
-        name: "",
-        initialAmount: 0,
-        destinationId: value.destinationId,
-      });
+      expenseForm.reset();
+      // Destination is intentionally not reset so the user can add multiple expenses to the same destination.
     },
   });
 
@@ -252,16 +252,12 @@ export function ManageExpensesDialog({
                 <Label htmlFor="expense-destination" className="sr-only">
                   Destination
                 </Label>
-                <expenseForm.Field name="destinationId">
-                  {(field) => (
-                    <DestinationDropdown
-                      budgieId={budgieId}
-                      value={field.state.value}
-                      onValueChange={field.handleChange}
-                      placeholder="Destination"
-                    />
-                  )}
-                </expenseForm.Field>
+                <DestinationDropdown
+                  budgieId={budgieId}
+                  value={addExpenseDestinationId}
+                  onValueChange={setAddExpenseDestinationId}
+                  placeholder="Destination"
+                />
               </div>
               <expenseForm.Subscribe
                 selector={(state): [string, number, boolean] => [

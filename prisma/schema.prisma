@@ -122,12 +122,16 @@ model Contribution {
 }
 
 model Destination {
-  id        String   @id @default(uuid())
-  budgieId  String
-  name      String
-  iban      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  budgieId      String
+  name          String
+  recipientName String
+  type          String
+  iban          String?
+  swift         String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   budgie  Budgie  @relation(fields: [budgieId], references: [id], onDelete: Cascade)
   costs   Cost[]

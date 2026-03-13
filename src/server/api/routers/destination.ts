@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { inferRouterOutputs } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { destinationTypeSchema } from "@/types/destination";
 
 type ContributorServices = {
   contributor: {
@@ -41,7 +43,11 @@ export const destinationRouter = createTRPCRouter({
       z.object({
         budgieId: z.string(),
         name: z.string().min(1).max(200),
+        recipientName: z.string().min(1).max(200),
+        type: destinationTypeSchema,
         iban: z.string().max(50).optional().nullable(),
+        swift: z.string().max(50).optional().nullable(),
+        phone: z.string().max(50).optional().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -49,7 +55,13 @@ export const destinationRouter = createTRPCRouter({
       return ctx.services.destination.create(
         input.budgieId,
         input.name,
-        input.iban
+        input.recipientName,
+        input.type,
+        {
+          iban: input.iban,
+          swift: input.swift,
+          phone: input.phone,
+        }
       );
     }),
 
@@ -57,19 +69,20 @@ export const destinationRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        name: z.string().min(1).max(200),
+        name: z.string().min(1).max(200).optional(),
+        recipientName: z.string().min(1).max(200).optional(),
+        type: destinationTypeSchema.optional(),
         iban: z.string().max(50).optional().nullable(),
+        swift: z.string().max(50).optional().nullable(),
+        phone: z.string().max(50).optional().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const destination = await ctx.services.destination.getById(input.id);
       if (!destination) throw new TRPCError({ code: "NOT_FOUND" });
       await requireBudgieAdmin(ctx.services, destination.budgieId, ctx.auth.userId);
-      return ctx.services.destination.update(
-        input.id,
-        input.name,
-        input.iban
-      );
+      const { id, ...data } = input;
+      return ctx.services.destination.update(id, data);
     }),
 
   delete: protectedProcedure
@@ -78,7 +91,18 @@ export const destinationRouter = createTRPCRouter({
       const destination = await ctx.services.destination.getById(input.id);
       if (!destination) throw new TRPCError({ code: "NOT_FOUND" });
       await requireBudgieAdmin(ctx.services, destination.budgieId, ctx.auth.userId);
+      const costCount = await ctx.services.destination.countCostsByDestinationId(input.id);
+      if (costCount > 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "This destination is in use by one or more costs and cannot be deleted.",
+        });
+      }
       await ctx.services.destination.delete(input.id);
       return { ok: true };
     }),
 });
+
+export type DestinationListOutput = inferRouterOutputs<typeof destinationRouter>["list"];
+
+export type DestinationListItem = DestinationListOutput[number];
