@@ -20,7 +20,7 @@ import {
   type ExpenseActivityItem,
 } from "@/components/expense-activity-list";
 import { DestinationDropdown } from "@/components/destination-dropdown";
-import { DestinationManagementDialog } from "@/components/destination-management-dialog";
+import { AddDestinationDialog } from "@/components/add-destination-dialog";
 import { Plus } from "lucide-react";
 
 interface ManageExpensesDialogProps {
@@ -289,7 +289,7 @@ export function ManageExpensesDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Expenses for this month</Label>
-              <DestinationManagementDialog
+              <AddDestinationDialog
                 budgieId={budgieId}
                 trigger={
                   <Button type="button" variant="ghost" size="sm">

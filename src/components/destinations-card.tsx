@@ -30,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DestinationManagementDialog } from "@/components/destination-management-dialog";
+import { AddDestinationDialog } from "@/components/add-destination-dialog";
 import type { Destination } from "@/app/budgie/[id]/budgie-detail-context";
 import type { DestinationType } from "@/types/destination";
 import { api } from "@/lib/trpc/client";
@@ -115,7 +115,7 @@ export function DestinationsCard({
           </CardDescription>
         </div>
         {isAdmin && (
-          <DestinationManagementDialog budgieId={budgieId} />
+          <AddDestinationDialog budgieId={budgieId} />
         )}
       </CardHeader>
       <CardContent>
