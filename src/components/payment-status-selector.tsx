@@ -58,7 +58,7 @@ export function PaymentStatusSelector({
             variant="ghost"
             className={cn(
               "text-base font-light",
-              isActive && "font-black",
+              isActive && "font-medium",
               isActive && className
             )}
             disabled={disabled}
@@ -74,7 +74,7 @@ export function PaymentStatusSelector({
       })}
       {selectedStatus && (
         <div className="w-12 flex justify-end items-center">
-          <selectedStatus.icon className={selectedStatus.className} />
+          <selectedStatus.icon className={selectedStatus.className} strokeWidth={1.6}/>
         </div>
       )}
     </div>
