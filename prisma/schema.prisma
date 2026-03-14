@@ -71,19 +71,20 @@ model Expense {
 }
 
 model Cost {
-  id           String   @id @default(uuid())
-  monthId      String
-  expenseId    String
+  id            String   @id @default(uuid())
+  monthId       String
+  expenseId     String
   destinationId String?
   amount        Decimal  @db.Decimal(10, 2)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  month       Month        @relation(fields: [monthId], references: [id], onDelete: Cascade)
-  expense     Expense      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  destination Destination? @relation(fields: [destinationId], references: [id], onDelete: Cascade)
-  contributions Contribution[]
+  month          Month          @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  expense        Expense        @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  destination    Destination?   @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  contributions  Contribution[]
+  paymentStatus  PaymentStatus?
 
   @@unique([monthId, expenseId])
   @@map("costs")
@@ -152,6 +153,18 @@ model Payment {
   contribution Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
 
   @@map("payments")
+}
+
+model PaymentStatus {
+  id        String   @id @default(uuid())
+  costId    String   @unique
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cost Cost @relation(fields: [costId], references: [id], onDelete: Cascade)
+
+  @@map("payment_status")
 }
 
 model Note {

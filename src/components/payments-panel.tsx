@@ -17,6 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CreditCard } from "lucide-react";
+import { PaymentStatusSection } from "@/components/payment-status-section";
+import type { PaymentStatusType } from "@/types/payment-status";
 
 export type PaymentsPanelCost = {
   id: string;
@@ -24,6 +26,8 @@ export type PaymentsPanelCost = {
   destinationId?: string | null;
   destination?: { id: string; name: string } | null;
   contributions: Array<{ contributorId: string; percentage: unknown }>;
+  expense?: { id: string; name: string } | null;
+  paymentStatus?: { id: string; status: PaymentStatusType } | null;
 };
 
 export type PaymentsPanelContributor = {
@@ -48,6 +52,9 @@ interface PaymentsPanelProps {
   costs: PaymentsPanelCost[];
   destinations: PaymentsPanelDestination[];
   currentUserId?: string | null;
+  budgieId: string;
+  monthId: string;
+  isAdmin: boolean;
   className?: string;
 }
 
@@ -70,6 +77,9 @@ export function PaymentsPanel({
   costs,
   destinations,
   currentUserId,
+  budgieId,
+  monthId,
+  isAdmin,
   className,
 }: PaymentsPanelProps) {
   const totalCostAmount = useMemo(
@@ -144,6 +154,24 @@ export function PaymentsPanel({
     }
     return rows;
   }, [destinations, hasNoDestination]);
+
+  const costsWithStatus: Array<
+    PaymentsPanelCost & { paymentStatusValue: PaymentStatusType; expenseName: string }
+  > = useMemo(
+    () =>
+      costs.map((cost) => {
+        const status =
+          cost.paymentStatus?.status ??
+          ("pending" as PaymentStatusType);
+        const expenseName = cost.expense?.name ?? "—";
+        return {
+          ...cost,
+          paymentStatusValue: status,
+          expenseName,
+        };
+      }),
+    [costs]
+  );
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -321,6 +349,13 @@ export function PaymentsPanel({
             </Card>
           ))}
         </div>
+
+        <PaymentStatusSection
+          costsWithStatus={costsWithStatus}
+          isAdmin={isAdmin}
+          budgieId={budgieId}
+          monthId={monthId}
+        />
       </div>
     </div>
   );

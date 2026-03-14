@@ -1,3 +1,4 @@
+import { DEFAULT_PAYMENT_STATUS } from "@/types/payment-status";
 import type { PrismaClient } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -113,6 +114,12 @@ export class MonthService {
             isActive: override.isActive,
           },
         });
+        await tx.paymentStatus.create({
+          data: {
+            costId: newCost.id,
+            status: DEFAULT_PAYMENT_STATUS,
+          },
+        });
         const sourceCost = sourceCosts.find(
           (cost) => cost.expenseId === override.expenseId
         );
@@ -164,6 +171,12 @@ export class MonthService {
             expenseId: cost.expenseId,
             amount: cost.amount,
             isActive: cost.isActive,
+          },
+        });
+        await tx.paymentStatus.create({
+          data: {
+            costId: newCost.id,
+            status: DEFAULT_PAYMENT_STATUS,
           },
         });
         if (cost.contributions.length > 0) {

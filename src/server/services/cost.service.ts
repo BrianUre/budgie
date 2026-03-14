@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
+import { DEFAULT_PAYMENT_STATUS, paymentStatusSchema, type PaymentStatusType } from "@/types/payment-status";
 
 export class CostService {
   constructor(private readonly db: PrismaClient) {}
@@ -18,6 +19,7 @@ export class CostService {
         expense: true,
         contributions: true,
         destination: true,
+        paymentStatus: true,
       },
     });
   }
@@ -43,6 +45,20 @@ export class CostService {
     });
   }
 
+  async updatePaymentStatus(costId: string, status: PaymentStatusType) {
+    const parsedStatus = paymentStatusSchema.parse(status);
+    const existing = await this.db.paymentStatus.findUnique({
+      where: { costId },
+    });
+    if (!existing) {
+      throw new Error("Payment status doesn't exist");
+    }
+    return this.db.paymentStatus.update({
+      where: { costId },
+      data: { status: parsedStatus },
+    });
+  }
+
   async getOrCreate(monthId: string, expenseId: string, amount: number) {
     const existing = await this.db.cost.findUnique({
       where: {
@@ -50,7 +66,7 @@ export class CostService {
       },
     });
     if (existing) return existing;
-    return this.db.cost.create({
+    const cost = await this.db.cost.create({
       data: {
         monthId,
         expenseId,
@@ -58,6 +74,13 @@ export class CostService {
         isActive: true,
       },
     });
+    await this.db.paymentStatus.create({
+      data: {
+        costId: cost.id,
+        status: DEFAULT_PAYMENT_STATUS,
+      },
+    });
+    return cost;
   }
 
   /**
@@ -93,6 +116,12 @@ export class CostService {
           amount: new Decimal(amount),
           isActive: true,
           ...(destinationId != null && destinationId !== "" ? { destinationId } : {}),
+        },
+      });
+      await (tx as any).paymentStatus.create({
+        data: {
+          costId: cost.id,
+          status: DEFAULT_PAYMENT_STATUS,
         },
       });
       const contributorCount = contributors.length;

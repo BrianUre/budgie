@@ -100,6 +100,17 @@ CREATE TABLE "contributions" (
 );
 
 -- CreateTable
+CREATE TABLE "payment_status" (
+    "id" TEXT NOT NULL,
+    "costId" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "payment_status_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "payments" (
     "id" TEXT NOT NULL,
     "destinationId" TEXT,
@@ -132,6 +143,9 @@ CREATE UNIQUE INDEX "costs_monthId_expenseId_key" ON "costs"("monthId", "expense
 -- CreateIndex
 CREATE UNIQUE INDEX "contributions_costId_contributorId_key" ON "contributions"("costId", "contributorId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "payment_status_costId_key" ON "payment_status"("costId");
+
 -- AddForeignKey
 ALTER TABLE "months" ADD CONSTRAINT "months_budgieId_fkey" FOREIGN KEY ("budgieId") REFERENCES "budgies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -161,6 +175,9 @@ ALTER TABLE "contributions" ADD CONSTRAINT "contributions_costId_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "contributions" ADD CONSTRAINT "contributions_contributorId_fkey" FOREIGN KEY ("contributorId") REFERENCES "contributors"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "payment_status" ADD CONSTRAINT "payment_status_costId_fkey" FOREIGN KEY ("costId") REFERENCES "costs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_destinationId_fkey" FOREIGN KEY ("destinationId") REFERENCES "destinations"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { paymentStatusSchema } from "@/types/payment-status";
 
 export const costRouter = createTRPCRouter({
   listForMonth: protectedProcedure
@@ -12,11 +13,16 @@ export const costRouter = createTRPCRouter({
       const costs = await ctx.services.cost.listForMonth(input.monthId);
       return costs.map((cost) => ({
         ...cost,
-        amount: Number(cost.amount),
-        contributions: cost.contributions.map((c) => ({
+        amount: Number((cost as any).amount),
+        contributions: (cost as any).contributions.map((c: any) => ({
           ...c,
           percentage: Number(c.percentage),
         })),
+        paymentStatus: (cost as any).paymentStatus
+          ? {
+              ...(cost as any).paymentStatus,
+            }
+          : null,
       }));
     }),
 
@@ -88,6 +94,32 @@ export const costRouter = createTRPCRouter({
       return ctx.services.cost.updateDestination(
         input.costId,
         input.destinationId === "" ? null : input.destinationId
+      );
+    }),
+
+  updatePaymentStatus: protectedProcedure
+    .input(
+      z.object({
+        costId: z.string(),
+        status: paymentStatusSchema,
+        budgieId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const isAdmin = await ctx.services.contributor.isAdmin(
+        input.budgieId,
+        ctx.auth.userId
+      );
+      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const cost = await ctx.services.cost.getById(input.costId);
+      if (!cost || cost.month.budgieId !== input.budgieId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      return ctx.services.cost.updatePaymentStatus(
+        input.costId,
+        input.status
       );
     }),
 

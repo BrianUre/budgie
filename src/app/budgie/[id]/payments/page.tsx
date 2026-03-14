@@ -7,6 +7,7 @@ import { useBudgieDetail } from "../budgie-detail-context";
 
 export default function PaymentsTabPage() {
   const {
+    isAdmin,
     budgieId,
     selectedMonthId,
     contributorsWithSessionFirst,
@@ -38,6 +39,9 @@ export default function PaymentsTabPage() {
         iban: destination.iban ?? null,
       }))}
       currentUserId={userId}
+      budgieId={budgieId}
+      monthId={selectedMonthId!}
+      isAdmin={isAdmin}
     />
   );
 }

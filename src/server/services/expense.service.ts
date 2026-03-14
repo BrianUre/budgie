@@ -1,3 +1,4 @@
+import { DEFAULT_PAYMENT_STATUS } from "@/types/payment-status";
 import type { PrismaClient } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -68,6 +69,13 @@ export class ExpenseService {
           ...(data.destinationId != null && data.destinationId !== ""
             ? { destinationId: data.destinationId }
             : {}),
+        },
+      });
+
+      await (tx as any).paymentStatus.create({
+        data: {
+          costId: cost.id,
+          status: DEFAULT_PAYMENT_STATUS,
         },
       });
 
