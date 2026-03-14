@@ -37,10 +37,10 @@ export class ContributionService {
    * Enforces: sum(percentages) === 100.
    */
   async setPercentages(costId: string, contributions: ContributionInput[]) {
-    const sum = contributions.reduce((s, c) => s + c.percentage, 0);
-    if (Math.abs(sum - 100) > 0.01) {
+    const percentageSum = contributions.reduce((sum, contrib) => sum + contrib.percentage, 0);
+    if (Math.abs(percentageSum - 100) > 0.01) {
       throw new Error(
-        `Percentages must sum to 100, got ${sum}`
+        `Percentages must sum to 100, got ${percentageSum}`
       );
     }
 
@@ -48,10 +48,10 @@ export class ContributionService {
       await tx.contribution.deleteMany({ where: { costId } });
       if (contributions.length === 0) return [];
       const created = await tx.contribution.createManyAndReturn({
-        data: contributions.map((c) => ({
+        data: contributions.map((contrib) => ({
           costId,
-          contributorId: c.contributorId,
-          percentage: new Decimal(c.percentage),
+          contributorId: contrib.contributorId,
+          percentage: new Decimal(contrib.percentage),
         })),
       });
       return created;
@@ -71,34 +71,45 @@ export class ContributionService {
       throw new Error("Percentage must be a valid number between 0 and 100");
     }
     return this.db.$transaction(async (tx) => {
-      const all = await tx.contribution.findMany({
+      const contributions = await tx.contribution.findMany({
         where: { costId },
         orderBy: { id: "asc" },
       });
-      const current = all.find((c) => c.id === contributionId);
-      if (!current) {
+      const targetContribution = contributions.find((contrib) => contrib.id === contributionId);
+      if (!targetContribution) {
         throw new Error("Contribution not found");
       }
-      const others = all.filter((c) => c.id !== contributionId);
-      const othersSum = others.reduce(
-        (s, c) => s + Number(c.percentage),
+      const siblingContributions = contributions.filter((contrib) => contrib.id !== contributionId);
+      const siblingPercentageSum = siblingContributions.reduce(
+        (sum, contrib) => sum + Number(contrib.percentage),
         0
       );
-      const newTotal = percentage + othersSum;
-      if (newTotal < 0.01) {
-        throw new Error("Cannot set percentage: would leave no room for others");
-      }
-      const scale = (100 - percentage) / othersSum;
+
       await tx.contribution.update({
         where: { id: contributionId },
         data: { percentage: new Decimal(percentage) },
       });
-      for (const o of others) {
-        const newPct = Number(o.percentage) * scale;
-        await tx.contribution.update({
-          where: { id: o.id },
-          data: { percentage: new Decimal(newPct) },
-        });
+
+      const remainingPercentage = 100 - percentage;
+      if (siblingContributions.length > 0) {
+        if (siblingPercentageSum > 0) {
+          const scale = remainingPercentage / siblingPercentageSum;
+          for (const sibling of siblingContributions) {
+            const rebalancedPercentage = Number(sibling.percentage) * scale;
+            await tx.contribution.update({
+              where: { id: sibling.id },
+              data: { percentage: new Decimal(rebalancedPercentage) },
+            });
+          }
+        } else {
+          const equalShare = remainingPercentage / siblingContributions.length;
+          for (const sibling of siblingContributions) {
+            await tx.contribution.update({
+              where: { id: sibling.id },
+              data: { percentage: new Decimal(equalShare) },
+            });
+          }
+        }
       }
       return tx.contribution.findMany({ where: { costId } });
     });
