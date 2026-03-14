@@ -209,9 +209,8 @@ export function ManageExpensesDialog({
             }}
             className="space-y-4"
           >
-            <div className="space-y-2">
+            <div className="space-y-2 px-2">
               <Label>Add new expense</Label>
-              <div className="grid gap-4 sm:grid-cols-2">
                 <expenseForm.Field name="name">
                   {(field) => (
                     <div className="grid gap-2">
@@ -247,8 +246,7 @@ export function ManageExpensesDialog({
                     </div>
                   )}
                 </expenseForm.Field>
-              </div>
-              <div className="grid gap-2 sm:max-w-xs">
+
                 <Label htmlFor="expense-destination" className="sr-only">
                   Destination
                 </Label>
@@ -258,7 +256,6 @@ export function ManageExpensesDialog({
                   onValueChange={setAddExpenseDestinationId}
                   placeholder="Destination"
                 />
-              </div>
               <expenseForm.Subscribe
                 selector={(state): [string, number, boolean] => [
                   state.values.name,

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DestinationDropdown } from "@/components/destination-dropdown";
+import { Checkbox } from "./ui/checkbox";
 
 export type ExpenseActivityItem = {
   expenseId: string;
@@ -75,20 +76,18 @@ export function ExpenseActivityList({
         {items.map((item) => (
           <li
             key={item.expenseId}
-            className="flex flex-wrap items-center gap-3 rounded-md border px-3 py-2"
+            className="grid grid-cols-3 items-center gap-3 rounded-md border px-3 py-2"
           >
             <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={item.isActive}
                 disabled={
                   disabled ||
                   (item.costId === null && !allowToggleWhenNoCost)
                 }
-                onChange={() =>
-                  onActiveChange(item.expenseId, item.costId, !item.isActive)
+                onCheckedChange={(checked) =>
+                  onActiveChange(item.expenseId, item.costId, checked as boolean)
                 }
-                className="h-4 w-4 rounded border-input"
                 aria-label={`${item.expenseName} active`}
               />
               <span className="font-medium">{item.expenseName}</span>
