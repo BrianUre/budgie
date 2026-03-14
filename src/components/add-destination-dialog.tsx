@@ -98,7 +98,7 @@ export function AddDestinationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-1 flex-col gap-6 overflow-y-auto py-4">
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto py-4 px-2">
           <form
             onSubmit={(e) => {
               e.preventDefault();
