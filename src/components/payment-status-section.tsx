@@ -73,10 +73,10 @@ export function PaymentStatusSection({
                   "transition-colors"
                 )}
               >
-                <TableCell className="font-medium">
+                <TableCell className="font-medium font-zain text-lg">
                   {cost.expense.name}
                 </TableCell>
-                <TableCell className="text-right font-mono">
+                <TableCell className="text-right font-zain text-lg">
                   {formatMoney(cost.amount)}
                 </TableCell>
                 <TableCell className="text-right">

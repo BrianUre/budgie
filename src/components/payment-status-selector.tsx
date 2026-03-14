@@ -4,6 +4,7 @@ import { PaymentStatusType } from "@/types/payment-status";
 import React from "react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { Check, CheckCircle, Clock, LucideIcon, Send } from "lucide-react";
 
 type PaymentStatusSelectorProps = {
   value: PaymentStatusType;
@@ -12,9 +13,32 @@ type PaymentStatusSelectorProps = {
   disabled?: boolean;
 };
 
-// export function getPaymentStatusRowClass(status: PaymentStatusType): string {
-//   return STATUS_ROW_CLASSES[status];
-// }
+const statusOptions: {
+  status: PaymentStatusType,
+  icon: LucideIcon,
+  className: string
+}[] = [
+  {
+    status: "pending",
+    icon: Clock,
+    className: "text-red-400",
+  },
+  {
+    status: "sent",
+    icon: Send,
+    className: "text-yellow-500",
+  },
+  {
+    status: "paid",
+    icon: Check,
+    className: "text-emerald-500",
+  },
+  {
+    status: "resolved",
+    icon: CheckCircle,
+    className: "text-sky-500",
+  },
+];
 
 export function PaymentStatusSelector({
   value,
@@ -22,18 +46,20 @@ export function PaymentStatusSelector({
   className,
   disabled,
 }: PaymentStatusSelectorProps) {
-  const statusOptions: PaymentStatusType[] = ["pending", "sent", "paid", "resolved"]
+  const selectedStatus = statusOptions.find(({ status }) => status === value);
   return (
-    <div className={cn("inline-flex gap-1", className)}>
-      {statusOptions.map((status) => {
+    <div className={cn("inline-flex items-center gap-1", className)}>
+      {statusOptions.map(({ status, icon, className }) => {
         const isActive = status === value;
         return (
           <Button
             key={status}
             type="button"
+            variant="ghost"
             className={cn(
-              "px-2 text-xs",
-              !isActive && "opacity-70",
+              "text-base font-light",
+              isActive && "font-black",
+              isActive && className
             )}
             disabled={disabled}
             onClick={() => {
@@ -46,6 +72,11 @@ export function PaymentStatusSelector({
           </Button>
         );
       })}
+      {selectedStatus && (
+        <div className="w-12 flex justify-end items-center">
+          <selectedStatus.icon className={selectedStatus.className} />
+        </div>
+      )}
     </div>
   );
 }
