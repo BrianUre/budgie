@@ -18,7 +18,7 @@ export class CostService {
    */
   async listForMonth(monthId: string) {
     const costs = await this.db.cost.findMany({
-      where: { monthId },
+      where: { monthId, expense: { archived: false } },
       include: {
         expense: true,
         contributions: true,

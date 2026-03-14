@@ -25,23 +25,31 @@ export class ExpenseService {
     });
   }
 
-  async archive(expenseId: string) {
+  /**
+   * Removes or archives an expense depending on whether it has costs in months
+   * other than `currentMonthId`. Expenses used only in the current month (or
+   * in no months at all) are hard-deleted; those with history in other months
+   * are soft-archived so historical data is preserved.
+   */
+  async archive(expenseId: string, currentMonthId: string) {
     const expense = await this.db.expense.findUnique({
       where: { id: expenseId },
       include: { costs: true },
     });
     if (!expense) return;
 
-    if (expense.costs.length === 0) {
-      await this.db.expense.delete({ where: { id: expenseId } });
-      return;
-    }
+    const costsInOtherMonths = expense.costs.filter(
+      (cost) => cost.monthId !== currentMonthId
+    );
 
-    const archivedOn = firstDayOfMonth(new Date());
-    await this.db.expense.update({
-      where: { id: expenseId },
-      data: { archived: true, archivedOn },
-    });
+    if (costsInOtherMonths.length > 0) {
+      await this.db.expense.update({
+        where: { id: expenseId },
+        data: { archived: true, archivedOn: firstDayOfMonth(new Date()) },
+      });
+    } else {
+      await this.db.expense.delete({ where: { id: expenseId } });
+    }
   }
 
   async create(

@@ -2,11 +2,13 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/trpc/client";
 import { DestinationDropdown } from "@/components/destination-dropdown";
+import { RemoveExpenseDialog } from "@/components/remove-expense-dialog";
 import { Checkbox } from "./ui/checkbox";
 
+/** A single row in the expense activity list. */
 export type ExpenseActivityItem = {
   expenseId: string;
   expenseName: string;
@@ -16,28 +18,42 @@ export type ExpenseActivityItem = {
   destinationId: string | null;
 };
 
+/**
+ * Displays a list of expense rows with toggles, optional amount inputs,
+ * destination dropdowns, and archive actions. The destination-change mutation
+ * and the archive confirmation dialog are self-contained; the parent only
+ * needs to supply callbacks that vary by context (e.g. active-change, amount).
+ */
 interface ExpenseActivityListProps {
+  /** Expense rows to render. */
   items: ExpenseActivityItem[];
+  /** Called when a row's active checkbox changes. */
   onActiveChange: (
     expenseId: string,
     costId: string | null,
     isActive: boolean
   ) => void;
+  /** Called when the inline amount input changes (requires `showAmountInput`). */
   onAmountChange?: (expenseId: string, amount: number) => void;
-  onArchive?: (expenseId: string) => void;
   /** When true and costId is null, show "Add to month" button; parent handles amount and createForMonth. */
   showAddToMonthButton?: boolean;
+  /** Called when the "Add to month" button is clicked (requires `showAddToMonthButton`). */
   onAddToMonth?: (expenseId: string) => void;
+  /** Show an inline number input for each row's amount. */
   showAmountInput?: boolean;
+  /** Show the remove/archive action per row (renders {@link RemoveExpenseDialog}). Requires `budgieId` and `selectedMonthId`. */
   showArchiveButton?: boolean;
   /** When true, checkbox is enabled even when costId is null (e.g. draft mode for create next month). */
   allowToggleWhenNoCost?: boolean;
-  /** When true, show destination dropdown per row (only for rows with costId). Requires budgieId and onDestinationChange. */
+  /** Show a destination dropdown per row (only for rows with costId). Requires `budgieId` and `selectedMonthId`. */
   showDestinationDropdown?: boolean;
+  /** Budgie that owns these expenses. Required when `showDestinationDropdown` or `showArchiveButton` is true. */
   budgieId?: string;
-  onDestinationChange?: (costId: string, destinationId: string | null) => void;
+  /** Currently selected month. Required when `showDestinationDropdown` or `showArchiveButton` is true. */
+  selectedMonthId?: string | null;
   /** Optional trigger (e.g. "Manage destinations" button) to open destination management. */
   manageDestinationsTrigger?: React.ReactNode;
+  /** Disables all interactive controls. */
   disabled?: boolean;
   className?: string;
 }
@@ -46,7 +62,6 @@ export function ExpenseActivityList({
   items,
   onActiveChange,
   onAmountChange,
-  onArchive,
   showAddToMonthButton = false,
   onAddToMonth,
   showAmountInput = false,
@@ -54,11 +69,24 @@ export function ExpenseActivityList({
   allowToggleWhenNoCost = false,
   showDestinationDropdown = false,
   budgieId,
-  onDestinationChange,
+  selectedMonthId,
   manageDestinationsTrigger,
   disabled = false,
   className,
 }: ExpenseActivityListProps) {
+  const utils = api.useUtils();
+
+  const updateDestinationMutation = api.cost.updateDestination.useMutation({
+    onSuccess: () => {
+      if (selectedMonthId && budgieId) {
+        void utils.cost.listForMonth.invalidate({
+          monthId: selectedMonthId,
+          budgieId,
+        });
+      }
+    },
+  });
+
   if (items.length === 0) {
     return (
       <p className={cn("text-muted-foreground text-sm", className)}>
@@ -108,15 +136,18 @@ export function ExpenseActivityList({
             )}
             {showDestinationDropdown &&
               budgieId &&
-              onDestinationChange &&
               item.costId !== null && (
                 <DestinationDropdown
                   budgieId={budgieId}
                   value={item.destinationId}
                   onValueChange={(destinationId) =>
-                    onDestinationChange(item.costId!, destinationId)
+                    updateDestinationMutation.mutate({
+                      costId: item.costId!,
+                      destinationId,
+                      budgieId: budgieId!,
+                    })
                   }
-                  disabled={disabled}
+                  disabled={disabled || updateDestinationMutation.isPending}
                   placeholder="Destination"
                   className="h-8 min-w-[10rem]"
                 />
@@ -135,19 +166,15 @@ export function ExpenseActivityList({
                 Add to month
               </Button>
             )}
-            {showArchiveButton && onArchive && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="ml-auto h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-              onClick={() => onArchive(item.expenseId)}
-              disabled={disabled}
-              aria-label={`Archive ${item.expenseName}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
+            {showArchiveButton && budgieId && selectedMonthId && (
+              <RemoveExpenseDialog
+                expenseId={item.expenseId}
+                expenseName={item.expenseName}
+                budgieId={budgieId}
+                selectedMonthId={selectedMonthId}
+                disabled={disabled}
+              />
+            )}
           </li>
         ))}
       </ul>

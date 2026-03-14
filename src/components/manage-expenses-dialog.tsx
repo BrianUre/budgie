@@ -92,18 +92,6 @@ export function ManageExpensesDialog({
     },
   });
 
-  const archiveMutation = api.expense.archive.useMutation({
-    onSuccess: () => {
-      void utils.expense.list.invalidate({ budgieId });
-      if (selectedMonthId) {
-        void utils.cost.listForMonth.invalidate({
-          monthId: selectedMonthId,
-          budgieId,
-        });
-      }
-    },
-  });
-
   const createForMonthMutation = api.cost.createForMonth.useMutation({
     onSuccess: () => {
       if (selectedMonthId) {
@@ -113,17 +101,6 @@ export function ManageExpensesDialog({
         });
         void utils.contribution.listForMonth.invalidate({
           monthId: selectedMonthId,
-        });
-      }
-    },
-  });
-
-  const updateDestinationMutation = api.cost.updateDestination.useMutation({
-    onSuccess: () => {
-      if (selectedMonthId) {
-        void utils.cost.listForMonth.invalidate({
-          monthId: selectedMonthId,
-          budgieId,
         });
       }
     },
@@ -173,15 +150,6 @@ export function ManageExpensesDialog({
     setActiveMutation.mutate({ costId, isActive, budgieId });
   };
 
-  const handleArchive = (expenseId: string) => {
-    const expense = expenses.find((exp) => exp.id === expenseId);
-    const message = expense
-      ? `Archive "${expense.name}"? It will be hidden from future months.`
-      : "Archive this expense? It will be hidden from future months.";
-    if (!window.confirm(message)) return;
-    archiveMutation.mutate({ expenseId, budgieId });
-  };
-
   const handleAddToMonth = (expenseId: string) => {
     if (!selectedMonthId) return;
     const raw = window.prompt("Initial amount for this month?", "0");
@@ -191,14 +159,6 @@ export function ManageExpensesDialog({
       monthId: selectedMonthId,
       expenseId,
       amount,
-      budgieId,
-    });
-  };
-
-  const handleDestinationChange = (costId: string, destinationId: string | null) => {
-    updateDestinationMutation.mutate({
-      costId,
-      destinationId,
       budgieId,
     });
   };
@@ -320,18 +280,15 @@ export function ManageExpensesDialog({
             <ExpenseActivityList
               items={activityItems}
               onActiveChange={handleActiveChange}
-              onArchive={handleArchive}
               showAddToMonthButton
               onAddToMonth={handleAddToMonth}
               showArchiveButton
               showDestinationDropdown
               budgieId={budgieId}
-              onDestinationChange={handleDestinationChange}
+              selectedMonthId={selectedMonthId}
               disabled={
                 setActiveMutation.isPending ||
-                archiveMutation.isPending ||
-                createForMonthMutation.isPending ||
-                updateDestinationMutation.isPending
+                createForMonthMutation.isPending
               }
             />
           </div>
