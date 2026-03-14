@@ -179,7 +179,7 @@ export function PaymentsPanel({
                       ) : (
                         <span className="text-muted-foreground">{name}</span>
                       )}
-                      <span className="font-mono">
+                      <span className="text-lg font-zain">
                         {formatMoney(totalByDestination.get(id) ?? 0)}
                       </span>
                     </li>
@@ -191,7 +191,7 @@ export function PaymentsPanel({
                     </li>
                     <li className="flex justify-between gap-2 text-red-500">
                       <span>No destination</span>
-                      <span className="font-mono">
+                      <span className="text-lg font-zain">
                         {formatMoney(totalByDestination.get(null) ?? 0)}
                       </span>
                     </li>
@@ -272,7 +272,7 @@ export function PaymentsPanel({
                               {name}
                             </span>
                           )}
-                          <span className="font-mono shrink-0">
+                          <span className="shrink-0 text-lg font-zain">
                             {formatMoney(
                               totalByContributorByDestination
                                 .get(contributor.id)
@@ -288,7 +288,7 @@ export function PaymentsPanel({
                         </li>
                         <li className="flex justify-between gap-2 text-red-500">
                           <span className="truncate">No destination</span>
-                          <span className="font-mono shrink-0">
+                          <span className="shrink-0 text-lg font-zain">
                             {formatMoney(
                               totalByContributorByDestination
                                 .get(contributor.id)
