@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Carousel,
@@ -20,8 +19,9 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { CreateNextMonthDialog } from "@/components/create-next-month-dialog";
+import { DeleteMonthDialog } from "@/components/delete-month-dialog";
 import { formatMonth } from "@/lib/utils";
-import { Trash2, Calendar, CalendarDays } from "lucide-react";
+import { Calendar, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -39,8 +39,6 @@ export type MonthSelectorContentProps = {
   selectedMonthId: string | null;
   onSelectMonth: (id: string) => void;
   isAdmin: boolean;
-  onDeleteMonth: (monthId: string, monthLabel: string) => void;
-  isDeleting: boolean;
 };
 
 function MonthSelectorDesktop({
@@ -49,8 +47,6 @@ function MonthSelectorDesktop({
   selectedMonthId,
   onSelectMonth,
   isAdmin,
-  onDeleteMonth,
-  isDeleting: deleteMonthIsPending,
 }: MonthSelectorContentProps) {
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
 
@@ -86,22 +82,15 @@ function MonthSelectorDesktop({
                   {formatMonth(new Date(month.date))}
                 </span>
                 {isAdmin && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive invisible group-hover:visible !bg-none"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteMonth(
-                        month.id,
-                        formatMonth(new Date(month.date))
-                      );
-                    }}
-                    disabled={deleteMonthIsPending}
-                    aria-label={`Delete ${formatMonth(new Date(month.date))}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <DeleteMonthDialog
+                    monthId={month.id}
+                    monthLabel={formatMonth(new Date(month.date))}
+                    budgieId={budgieId}
+                    months={months}
+                    selectedMonthId={selectedMonthId}
+                    onSelectMonth={onSelectMonth}
+                    triggerClassName="invisible group-hover:visible !bg-none"
+                  />
                 )}
               </CarouselItem>
             ))}
@@ -128,8 +117,6 @@ function MonthSelectorMobile({
   selectedMonthId,
   onSelectMonth,
   isAdmin,
-  onDeleteMonth,
-  isDeleting: deleteMonthIsPending,
 }: MonthSelectorContentProps) {
   const [open, setOpen] = useState(false);
   const selectedMonth = months.find((m) => m.id === selectedMonthId);
@@ -182,22 +169,14 @@ function MonthSelectorMobile({
                     {formatMonth(new Date(month.date))}
                   </span>
                   {isAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteMonth(
-                          month.id,
-                          formatMonth(new Date(month.date))
-                        );
-                      }}
-                      disabled={deleteMonthIsPending}
-                      aria-label={`Delete ${formatMonth(new Date(month.date))}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <DeleteMonthDialog
+                      monthId={month.id}
+                      monthLabel={formatMonth(new Date(month.date))}
+                      budgieId={budgieId}
+                      months={months}
+                      selectedMonthId={selectedMonthId}
+                      onSelectMonth={onSelectMonth}
+                    />
                   )}
                 </button>
               </li>
@@ -221,25 +200,10 @@ export function MonthSelector({
   isAdmin?: boolean;
 }) {
   const isMobile = useIsMobile();
-  const utils = api.useUtils();
   const { data: months = [] } = api.month.list.useQuery(
     { budgieId },
     { enabled: !!budgieId }
   );
-
-  const deleteMonth = api.month.delete.useMutation({
-    onSuccess: (_data, variables) => {
-      void utils.month.list.invalidate({ budgieId });
-      if (selectedMonthId === variables.monthId) {
-        const remaining = months.filter((m) => m.id !== variables.monthId);
-        const current = firstDayOfMonth(new Date());
-        const currentMonth = remaining.find((m) =>
-          isSameMonth(new Date(m.date), current)
-        );
-        onSelectMonth(currentMonth?.id ?? remaining[0]?.id ?? null);
-      }
-    },
-  });
 
   // Prefer current month for initial selection; fallback to first (latest)
   useEffect(() => {
@@ -266,24 +230,12 @@ export function MonthSelector({
     }
   }, [months, selectedMonthId, onSelectMonth]);
 
-  const handleDelete = (monthId: string, monthLabel: string) => {
-    if (
-      !window.confirm(
-        `Delete ${monthLabel}? This will remove all expenses and notes for that month.`
-      )
-    )
-      return;
-    deleteMonth.mutate({ monthId });
-  };
-
   const contentProps: MonthSelectorContentProps = {
     budgieId,
     months,
     selectedMonthId,
     onSelectMonth,
     isAdmin,
-    onDeleteMonth: handleDelete,
-    isDeleting: deleteMonth.isPending,
   };
 
   return isMobile ? (
