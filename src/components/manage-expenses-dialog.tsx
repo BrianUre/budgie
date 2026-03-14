@@ -60,7 +60,29 @@ export function ManageExpensesDialog({
   });
 
   const setActiveMutation = api.cost.setActive.useMutation({
-    onSuccess: () => {
+    onMutate: async (variables) => {
+      if (!selectedMonthId) return;
+      const queryKey = { monthId: selectedMonthId, budgieId };
+      await utils.cost.listForMonth.cancel(queryKey);
+      const previousCosts = utils.cost.listForMonth.getData(queryKey);
+      utils.cost.listForMonth.setData(queryKey, (old) =>
+        old?.map((cost) =>
+          cost.id === variables.costId
+            ? { ...cost, isActive: variables.isActive }
+            : cost
+        )
+      );
+      return { previousCosts };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousCosts && selectedMonthId) {
+        utils.cost.listForMonth.setData(
+          { monthId: selectedMonthId, budgieId },
+          context.previousCosts
+        );
+      }
+    },
+    onSettled: () => {
       if (selectedMonthId) {
         void utils.cost.listForMonth.invalidate({
           monthId: selectedMonthId,

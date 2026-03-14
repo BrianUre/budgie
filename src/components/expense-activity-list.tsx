@@ -81,10 +81,6 @@ export function ExpenseActivityList({
             <label className="flex cursor-pointer items-center gap-2">
               <Checkbox
                 checked={item.isActive}
-                disabled={
-                  disabled ||
-                  (item.costId === null && !allowToggleWhenNoCost)
-                }
                 onCheckedChange={(checked) =>
                   onActiveChange(item.expenseId, item.costId, checked as boolean)
                 }
