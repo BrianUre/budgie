@@ -26,7 +26,7 @@ import {
   type CostRow,
   type ExpensesTableContributor,
 } from "@/components/expenses-table-columns";
-import type { CostsForClient } from "@/lib/trpc/client";
+import type { CostListForMonth } from "@/server/api/routers/cost";
 
 export type ExpensesTableMeta = {
   costMutation: ReturnType<typeof api.cost.updateAmount.useMutation>;
@@ -106,7 +106,7 @@ export function ExpensesTable({
   selectedMonthId,
   currentUserId,
 }: {
-  costs: CostsForClient;
+  costs: CostListForMonth;
   contributors: ExpensesTableContributor[];
   isAdmin: boolean;
   budgieId: string;

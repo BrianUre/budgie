@@ -1,18 +1,8 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { ContributorListItem } from "@/server/api/routers/contributor";
 import type { DestinationListItem } from "@/server/api/routers/destination";
-
-type Contributor = {
-  id: string;
-  name: string | null;
-  userId?: string | null;
-  user?: {
-    name?: string | null;
-    email?: string | null;
-    imageUrl?: string | null;
-  } | null;
-};
 
 export type Destination = DestinationListItem;
 
@@ -20,8 +10,8 @@ export type BudgieDetailContextValue = {
   budgieId: string;
   budgie: { name: string };
   isAdmin: boolean;
-  contributors: Contributor[];
-  contributorsWithSessionFirst: Contributor[];
+  contributors: ContributorListItem[];
+  contributorsWithSessionFirst: ContributorListItem[];
   destinations: Destination[];
   selectedMonthId: string | null;
   setSelectedMonthId: (id: string | null) => void;

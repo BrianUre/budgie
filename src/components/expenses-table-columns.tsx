@@ -2,13 +2,13 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import type { createColumnHelper } from "@tanstack/react-table";
-import type { CostsForClient } from "@/lib/trpc/client";
+import type { CostListForMonth } from "@/server/api/routers/cost";
 import { formatMoney } from "@/lib/utils";
 import { CostAmountEdit } from "@/components/cost-amount-edit";
 import { CostContributionCell } from "@/components/cost-contribution-cell";
 import { ContributorColumnHeader } from "@/components/contributor-column-header";
 
-export type CostRow = CostsForClient[number];
+export type CostRow = CostListForMonth[number];
 
 export type ExpensesTableContributor = {
   id: string;

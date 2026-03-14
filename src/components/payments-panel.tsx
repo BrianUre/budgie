@@ -18,39 +18,14 @@ import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CreditCard } from "lucide-react";
 import { PaymentStatusSection } from "@/components/payment-status-section";
-import type { PaymentStatusType } from "@/types/payment-status";
-
-export type PaymentsPanelCost = {
-  id: string;
-  amount: unknown;
-  destinationId?: string | null;
-  destination?: { id: string; name: string } | null;
-  contributions: Array<{ contributorId: string; percentage: unknown }>;
-  expense?: { id: string; name: string } | null;
-  paymentStatus?: { id: string; status: PaymentStatusType } | null;
-};
-
-export type PaymentsPanelContributor = {
-  id: string;
-  name: string | null;
-  userId?: string | null;
-  user?: {
-    name?: string | null;
-    email?: string | null;
-    imageUrl?: string | null;
-  } | null;
-};
-
-export type PaymentsPanelDestination = {
-  id: string;
-  name: string;
-  iban?: string | null;
-};
+import type { CostListForMonthItem } from "@/server/api/routers/cost";
+import type { ContributorListItem } from "@/server/api/routers/contributor";
+import type { DestinationListItem } from "@/server/api/routers/destination";
 
 interface PaymentsPanelProps {
-  contributors: PaymentsPanelContributor[];
-  costs: PaymentsPanelCost[];
-  destinations: PaymentsPanelDestination[];
+  contributors: ContributorListItem[];
+  costs: CostListForMonthItem[];
+  destinations: DestinationListItem[];
   currentUserId?: string | null;
   budgieId: string;
   monthId: string;
@@ -58,11 +33,11 @@ interface PaymentsPanelProps {
   className?: string;
 }
 
-function contributorDisplayName(contributor: PaymentsPanelContributor): string {
+function contributorDisplayName(contributor: ContributorListItem): string {
   return contributor.user?.name ?? contributor.user?.email ?? contributor.name ?? "—";
 }
 
-function contributorInitials(contributor: PaymentsPanelContributor): string {
+function contributorInitials(contributor: ContributorListItem): string {
   const name = contributorDisplayName(contributor);
   if (name === "—") return "?";
   const parts = name.trim().split(/\s+/);
@@ -83,7 +58,7 @@ export function PaymentsPanel({
   className,
 }: PaymentsPanelProps) {
   const totalCostAmount = useMemo(
-    () => costs.reduce((sum, cost) => sum + Number(cost.amount), 0),
+    () => costs.reduce((sum, cost) => sum + cost.amount, 0),
     [costs]
   );
 
@@ -92,7 +67,7 @@ export function PaymentsPanel({
     for (const cost of costs) {
       const key = cost.destinationId ?? cost.destination?.id ?? null;
       const current = map.get(key) ?? 0;
-      map.set(key, current + Number(cost.amount));
+      map.set(key, current + cost.amount);
     }
     return map;
   }, [costs]);
@@ -106,8 +81,7 @@ export function PaymentsPanel({
           (contrib) => contrib.contributorId === contributor.id
         );
         if (contribution) {
-          total +=
-            Number(cost.amount) * (Number(contribution.percentage) / 100);
+          total += cost.amount * (contribution.percentage / 100);
         }
       }
       map.set(contributor.id, total);
@@ -125,8 +99,7 @@ export function PaymentsPanel({
         );
         if (!contribution) continue;
         const destKey = cost.destinationId ?? cost.destination?.id ?? null;
-        const amount =
-          Number(cost.amount) * (Number(contribution.percentage) / 100);
+        const amount = cost.amount * (contribution.percentage / 100);
         inner.set(destKey, (inner.get(destKey) ?? 0) + amount);
       }
       outer.set(contributor.id, inner);
@@ -154,24 +127,6 @@ export function PaymentsPanel({
     }
     return rows;
   }, [destinations, hasNoDestination]);
-
-  const costsWithStatus: Array<
-    PaymentsPanelCost & { paymentStatusValue: PaymentStatusType; expenseName: string }
-  > = useMemo(
-    () =>
-      costs.map((cost) => {
-        const status =
-          cost.paymentStatus?.status ??
-          ("pending" as PaymentStatusType);
-        const expenseName = cost.expense?.name ?? "—";
-        return {
-          ...cost,
-          paymentStatusValue: status,
-          expenseName,
-        };
-      }),
-    [costs]
-  );
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -351,7 +306,7 @@ export function PaymentsPanel({
         </div>
 
         <PaymentStatusSection
-          costsWithStatus={costsWithStatus}
+          costs={costs}
           isAdmin={isAdmin}
           budgieId={budgieId}
           monthId={monthId}

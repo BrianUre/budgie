@@ -12,8 +12,12 @@ export class CostService {
     });
   }
 
+  /**
+   * Returns costs for a month with all relations included and Decimal fields
+   * serialized to numbers so the result is directly usable by the client.
+   */
   async listForMonth(monthId: string) {
-    return this.db.cost.findMany({
+    const costs = await this.db.cost.findMany({
       where: { monthId },
       include: {
         expense: true,
@@ -22,6 +26,14 @@ export class CostService {
         paymentStatus: true,
       },
     });
+    return costs.map((cost) => ({
+      ...cost,
+      amount: cost.amount.toNumber(),
+      contributions: cost.contributions.map((c) => ({
+        ...c,
+        percentage: c.percentage.toNumber(),
+      })),
+    }));
   }
 
   async updateAmount(costId: string, amount: number) {

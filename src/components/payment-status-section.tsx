@@ -20,21 +20,12 @@ import { api } from "@/lib/trpc/client";
 import {
   PaymentStatusSelector,
 } from "@/components/payment-status-selector";
-import type { PaymentStatusType } from "@/types/payment-status";
-
-/**
- * Row shape for the expenses table: cost id, amount, expense name, and current payment status.
- */
-export type PaymentStatusSectionRow = {
-  id: string;
-  amount: unknown;
-  expenseName: string;
-  paymentStatusValue: PaymentStatusType;
-};
+import { DEFAULT_PAYMENT_STATUS, type PaymentStatusType } from "@/types/payment-status";
+import type { CostListForMonthItem } from "@/server/api/routers/cost";
 
 interface PaymentStatusSectionProps {
-  /** Costs for the selected month with status and expense name resolved. */
-  costsWithStatus: PaymentStatusSectionRow[];
+  /** Costs for the selected month, used to render name, amount, and status. */
+  costs: CostListForMonthItem[];
   isAdmin: boolean;
   budgieId: string;
   monthId: string;
@@ -42,10 +33,10 @@ interface PaymentStatusSectionProps {
 
 /**
  * Renders the "Expenses this month" card: a table of name, amount, and status
- * with a one-click status selector per row. Row background reflects current status.
+ * with a one-click status selector per row.
  */
 export function PaymentStatusSection({
-  costsWithStatus,
+  costs,
   isAdmin,
   budgieId,
   monthId,
@@ -75,7 +66,7 @@ export function PaymentStatusSection({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {costsWithStatus.map((cost) => (
+            {costs.map((cost) => (
               <TableRow
                 key={cost.id}
                 className={cn(
@@ -83,14 +74,14 @@ export function PaymentStatusSection({
                 )}
               >
                 <TableCell className="font-medium">
-                  {cost.expenseName}
+                  {cost.expense.name}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {formatMoney(Number(cost.amount))}
+                  {formatMoney(cost.amount)}
                 </TableCell>
                 <TableCell className="text-right">
                   <PaymentStatusSelector
-                    value={cost.paymentStatusValue}
+                    value={(cost.paymentStatus?.status ?? DEFAULT_PAYMENT_STATUS) as PaymentStatusType}
                     disabled={!isAdmin}
                     onChange={(nextStatus) => {
                       if (!isAdmin) return;

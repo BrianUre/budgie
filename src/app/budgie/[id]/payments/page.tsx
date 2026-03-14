@@ -33,11 +33,7 @@ export default function PaymentsTabPage() {
     <PaymentsPanel
       contributors={contributorsWithSessionFirst}
       costs={activeCosts}
-      destinations={destinations.map((destination) => ({
-        id: destination.id,
-        name: destination.name ?? "",
-        iban: destination.iban ?? null,
-      }))}
+      destinations={destinations}
       currentUserId={userId}
       budgieId={budgieId}
       monthId={selectedMonthId!}

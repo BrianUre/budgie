@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ManageExpensesDialog } from "@/components/manage-expenses-dialog";
 import { cn } from "@/lib/utils";
 import { ReceiptText } from "lucide-react";
-import type { CostsForClient } from "@/lib/trpc/client";
+import type { CostListForMonth } from "@/server/api/routers/cost";
 import { ExpensesTable } from "@/components/expenses-table";
 
 type Contributor = {
@@ -34,7 +34,7 @@ export function ExpensesView({
   contributors: Contributor[];
   currentUserId?: string | null;
   className?: string;
-  costsForMonth: CostsForClient;
+  costsForMonth: CostListForMonth;
 }) {
   const activeCosts = useMemo(
     () => costsForMonth.filter((cost) => cost.isActive),

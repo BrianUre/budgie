@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { inferRouterOutputs } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 
 async function requireBudgieAdmin(
@@ -57,3 +58,5 @@ export const contributorRouter = createTRPCRouter({
       return ctx.services.contributor.delete(input.contributorId);
     }),
 });
+
+export type ContributorListItem = inferRouterOutputs<typeof contributorRouter>["list"][number];

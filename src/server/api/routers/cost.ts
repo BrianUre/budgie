@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { inferRouterOutputs } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { paymentStatusSchema } from "@/types/payment-status";
 
@@ -10,20 +11,7 @@ export const costRouter = createTRPCRouter({
       const month = await ctx.services.month.getById(input.monthId);
       if (!month) throw new TRPCError({ code: "NOT_FOUND" });
 
-      const costs = await ctx.services.cost.listForMonth(input.monthId);
-      return costs.map((cost) => ({
-        ...cost,
-        amount: Number((cost as any).amount),
-        contributions: (cost as any).contributions.map((c: any) => ({
-          ...c,
-          percentage: Number(c.percentage),
-        })),
-        paymentStatus: (cost as any).paymentStatus
-          ? {
-              ...(cost as any).paymentStatus,
-            }
-          : null,
-      }));
+      return ctx.services.cost.listForMonth(input.monthId);
     }),
 
   updateAmount: protectedProcedure
@@ -172,3 +160,6 @@ export const costRouter = createTRPCRouter({
       );
     }),
 });
+
+export type CostListForMonth = inferRouterOutputs<typeof costRouter>["listForMonth"];
+export type CostListForMonthItem = CostListForMonth[number];
