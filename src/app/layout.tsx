@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Atma, Inter, Shadows_Into_Light, Zain } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "@/lib/trpc/react";
+import { Navbar } from "@/components/navbar";
 import "@/styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -26,7 +27,7 @@ const zain = Zain({
 
 export const metadata: Metadata = {
   title: "Budgie - Budget Planner",
-  description: "Track expenses month-to-month with your partner",
+  description: "Track personal expenses month-to-month",
 };
 
 export default function RootLayout({
@@ -38,6 +39,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${inter.className} ${atma.variable} ${shadowsIntoLight.variable} ${zain.variable}`}>
+          <Navbar />
           <TRPCReactProvider>{children}</TRPCReactProvider>
         </body>
       </html>
