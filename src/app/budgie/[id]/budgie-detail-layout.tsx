@@ -133,8 +133,7 @@ export function BudgieDetailLayout({
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <Bird className="h-6 w-6 text-tertiary" />
-            <h1 className="text-base sm:text-2xl text-tertiary font-atma">
+            <h1 className="text-base sm:text-lg text-tertiary font-atma">
               <span className="font-semibold text-primary font-atma">
                 Budgie:
               </span>{" "}
