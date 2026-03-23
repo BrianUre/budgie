@@ -69,6 +69,10 @@
    @apply border-red-500 border-8;
 }
 
+.subtitle {
+  @apply text-sm text-muted-foreground;
+}
+
 @layer base {
   * {
     @apply border-border;
