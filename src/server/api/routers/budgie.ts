@@ -7,6 +7,10 @@ export const budgieRouter = createTRPCRouter({
     return ctx.services.budgie.listForUser(ctx.auth.userId);
   }),
 
+  listForDashboard: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.services.budgie.listDashboardForUser(ctx.auth.userId);
+  }),
+
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {

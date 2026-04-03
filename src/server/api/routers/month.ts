@@ -49,6 +49,13 @@ export const monthRouter = createTRPCRouter({
       );
     }),
 
+  ensureCurrentMonth: protectedProcedure
+    .input(z.object({ budgieId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await requireBudgieAdmin(ctx.services, input.budgieId, ctx.auth.userId);
+      return ctx.services.month.ensureCurrentMonthForBudgie(input.budgieId);
+    }),
+
   delete: protectedProcedure
     .input(z.object({ monthId: z.string() }))
     .mutation(async ({ ctx, input }) => {

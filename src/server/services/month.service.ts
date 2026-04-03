@@ -52,6 +52,28 @@ export class MonthService {
     });
   }
 
+  /**
+   * Ensures a month row exists for the current UTC calendar month.
+   * If created, copies costs from the latest existing month when one exists.
+   */
+  async ensureCurrentMonthForBudgie(budgieId: string) {
+    const currentStart = firstDayOfMonth(new Date());
+    const existing = await this.getByBudgieAndDate(budgieId, currentStart);
+    if (existing) return existing;
+
+    const months = await this.listForBudgie(budgieId);
+    const newMonth = await this.db.month.create({
+      data: { budgieId, date: currentStart },
+    });
+    if (months.length > 0) {
+      await this.duplicateCostsAndContributionsFromMonth(
+        months[0]!.id,
+        newMonth.id
+      );
+    }
+    return newMonth;
+  }
+
   async createNextForBudgie(
     budgieId: string,
     costOverrides?: CostOverride[]
