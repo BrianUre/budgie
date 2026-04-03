@@ -57,57 +57,61 @@ function MonthSelectorDesktop({
   }, [carouselApi, selectedMonthId, months]);
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <Carousel
-          opts={{ align: "start", loop: false }}
-          setApi={setCarouselApi}
-          className="mx-12"
-        >
-          <CarouselContent className="px-4 !gap-0">
-            {months.map((month) => (
-              <CarouselItem
-                key={month.id}
-                className={cn(
-                  "basis-48 overflow-visible px-2 cursor-pointer hover:text-primary-hover group flex items-center justify-around group hover:bg-muted/50",
-                  selectedMonthId === month.id && "text-primary"
-                )}
-                onClick={() => onSelectMonth(month.id)}
-              >
-                <span className="font-medium flex items-center gap-2">
-                  <CalendarDays className={cn(
-                    "h-4 w-4 group-hover:text-secondary-hover",
-                    selectedMonthId === month.id && "text-secondary"
-                    )} />
-                  {formatMonth(new Date(month.date))}
-                </span>
-                {isAdmin && (
-                  <DeleteMonthDialog
-                    monthId={month.id}
-                    monthLabel={formatMonth(new Date(month.date))}
-                    budgieId={budgieId}
-                    months={months}
-                    selectedMonthId={selectedMonthId}
-                    onSelectMonth={onSelectMonth}
-                    triggerClassName="invisible group-hover:visible !bg-none"
-                  />
-                )}
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
-        </Carousel>
-        <div className="flex items-center justify-center p-0">
-          {isAdmin && (
-            <CreateNextMonthDialog
-              budgieId={budgieId}
-              onSuccess={(newMonthId) => onSelectMonth(newMonthId)}
-            />
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <section className='flex flex-col gap-2'>
+      <div>
+        <CardContent className="p-0">
+          <Carousel
+            opts={{ align: 'start', loop: false, watchDrag: false }}
+            setApi={setCarouselApi}
+            className="mx-12 py-2"
+          >
+            <CarouselContent className="px-4 !gap-0">
+              {months.map((month) => (
+                <CarouselItem
+                  key={month.id}
+                  className={cn(
+                    'basis-48 overflow-visible px-2 cursor-pointer hover:text-primary-hover flex items-center justify-around hover:bg-muted/50',
+                    // selectedMonthId === month.id && 'text-primary',
+                  )}
+                  onClick={() => onSelectMonth(month.id)}
+                >
+                  <span className="font-medium flex items-center gap-2">
+                    <CalendarDays
+                      className={cn(
+                        'h-4 w-4 group-hover:text-secondary-hover',
+                        selectedMonthId === month.id && 'text-secondary',
+                      )}
+                    />
+                    {formatMonth(new Date(month.date))}
+                  </span>
+                  {isAdmin && (
+                    <DeleteMonthDialog
+                      monthId={month.id}
+                      monthLabel={formatMonth(new Date(month.date))}
+                      budgieId={budgieId}
+                      months={months}
+                      selectedMonthId={selectedMonthId}
+                      onSelectMonth={onSelectMonth}
+                      triggerClassName="invisible group-hover:visible !bg-none"
+                    />
+                  )}
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+        </CardContent>
+      </div>
+      <div className="flex items-center justify-center p-0">
+        {isAdmin && (
+          <CreateNextMonthDialog
+            budgieId={budgieId}
+            onSuccess={(newMonthId) => onSelectMonth(newMonthId)}
+          />
+        )}
+      </div>
+    </section>
   );
 }
 
