@@ -31,7 +31,7 @@ export function CreateBudgieDialog({
   const utils = api.useUtils();
   const createBudgie = api.budgie.create.useMutation({
     onSuccess: (budgie) => {
-      void utils.budgie.list.invalidate();
+      void utils.budgie.listForDashboard.invalidate();
       router.push(`/budgie/${budgie.id}`);
     },
   });

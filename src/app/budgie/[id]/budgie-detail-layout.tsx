@@ -1,32 +1,19 @@
 "use client";
 
-import {
-  useParams,
-  usePathname,
-  useSelectedLayoutSegment,
-} from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { RedirectToSignIn } from "@clerk/nextjs";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Bird, PanelRight } from "lucide-react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ArrowLeft } from "lucide-react";
 import { MonthSelector } from "@/components/month-selector";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BudgieDetailProvider,
   type BudgieDetailContextValue,
 } from "./budgie-detail-context";
-
-const TAB_ROUTES = [
-  { segment: "expenses", label: "Expenses" },
-  { segment: "payments", label: "Payments" },
-  { segment: "destinations", label: "Destinations" },
-  { segment: "collaborators", label: "Contributors" },
-] as const;
 
 export function BudgieDetailLayout({
   children,
@@ -102,15 +89,6 @@ export function BudgieDetailLayout({
     );
   }
 
-  const basePath =
-    "/" + pathname.split("/").filter(Boolean).slice(0, 2).join("/");
-  const segment = useSelectedLayoutSegment();
-  const currentSegment = (
-    segment && TAB_ROUTES.some((route) => route.segment === segment)
-      ? segment
-      : TAB_ROUTES[0]!.segment
-  );
-
   const contextValue: BudgieDetailContextValue = {
     budgieId: id,
     budgie: { name: budgie.name },
@@ -139,29 +117,7 @@ export function BudgieDetailLayout({
               </span>{" "}
               {budgie.name}
             </h1>
-            <div className="z-40 ml-auto md:hidden">
-              <SidebarTrigger>
-                <PanelRight className="h-4 w-4" />
-                <span className="sr-only">Toggle Sidebar</span>
-              </SidebarTrigger>
-            </div>
           </div>
-
-          {/* Tab bar: desktop only */}
-          <nav className="hidden md:block" aria-label="Budgie sections">
-            <Tabs value={currentSegment}>
-              <TabsList  className="grid w-full grid-cols-4">
-                {TAB_ROUTES.map(({ segment, label }) => {
-                  const href = `${basePath}/${segment}`;
-                  return (
-                    <TabsTrigger key={segment} value={segment} asChild>
-                      <Link href={href}>{label}</Link>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </Tabs>
-          </nav>
 
           <MonthSelector
             budgieId={id}

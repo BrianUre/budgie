@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { api } from "@/lib/trpc/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/trpc/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Carousel,
   CarouselContent,
@@ -10,20 +10,20 @@ import {
   CarouselNext,
   CarouselPrevious,
   type CarouselApi,
-} from "@/components/ui/carousel";
+} from '@/components/ui/carousel';
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
-import { CreateNextMonthDialog } from "@/components/create-next-month-dialog";
-import { DeleteMonthDialog } from "@/components/delete-month-dialog";
-import { formatMonth } from "@/lib/utils";
-import { Calendar, CalendarDays } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+} from '@/components/ui/drawer';
+import { CreateNextMonthDialog } from '@/components/create-next-month-dialog';
+import { DeleteMonthDialog } from '@/components/delete-month-dialog';
+import { formatMonth } from '@/lib/utils';
+import { Calendar, CalendarDays } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function firstDayOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -57,57 +57,61 @@ function MonthSelectorDesktop({
   }, [carouselApi, selectedMonthId, months]);
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <Carousel
-          opts={{ align: "start", loop: false }}
-          setApi={setCarouselApi}
-          className="mx-12"
-        >
-          <CarouselContent className="px-4 !gap-0">
-            {months.map((month) => (
-              <CarouselItem
-                key={month.id}
-                className={cn(
-                  "basis-48 overflow-visible px-2 cursor-pointer hover:text-primary-hover group flex items-center justify-around group hover:bg-muted/50",
-                  selectedMonthId === month.id && "text-primary"
-                )}
-                onClick={() => onSelectMonth(month.id)}
-              >
-                <span className="font-medium flex items-center gap-2">
-                  <CalendarDays className={cn(
-                    "h-4 w-4 group-hover:text-secondary-hover",
-                    selectedMonthId === month.id && "text-secondary"
-                    )} />
-                  {formatMonth(new Date(month.date))}
-                </span>
-                {isAdmin && (
-                  <DeleteMonthDialog
-                    monthId={month.id}
-                    monthLabel={formatMonth(new Date(month.date))}
-                    budgieId={budgieId}
-                    months={months}
-                    selectedMonthId={selectedMonthId}
-                    onSelectMonth={onSelectMonth}
-                    triggerClassName="invisible group-hover:visible !bg-none"
-                  />
-                )}
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
-        </Carousel>
-        <div className="flex items-center justify-center p-0">
-          {isAdmin && (
-            <CreateNextMonthDialog
-              budgieId={budgieId}
-              onSuccess={(newMonthId) => onSelectMonth(newMonthId)}
-            />
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <section className='flex flex-col gap-2'>
+      <div>
+        <CardContent className="p-0">
+          <Carousel
+            opts={{ align: 'start', loop: false, watchDrag: false }}
+            setApi={setCarouselApi}
+            className="mx-12 py-2"
+          >
+            <CarouselContent className="px-4 !gap-0">
+              {months.map((month) => (
+                <CarouselItem
+                  key={month.id}
+                  className={cn(
+                    'basis-48 overflow-visible px-2 cursor-pointer hover:text-primary-hover flex items-center justify-around hover:bg-muted/50',
+                    // selectedMonthId === month.id && 'text-primary',
+                  )}
+                  onClick={() => onSelectMonth(month.id)}
+                >
+                  <span className="font-medium flex items-center gap-2">
+                    <CalendarDays
+                      className={cn(
+                        'h-4 w-4 group-hover:text-secondary-hover',
+                        selectedMonthId === month.id && 'text-secondary',
+                      )}
+                    />
+                    {formatMonth(new Date(month.date))}
+                  </span>
+                  {isAdmin && (
+                    <DeleteMonthDialog
+                      monthId={month.id}
+                      monthLabel={formatMonth(new Date(month.date))}
+                      budgieId={budgieId}
+                      months={months}
+                      selectedMonthId={selectedMonthId}
+                      onSelectMonth={onSelectMonth}
+                      triggerClassName="invisible group-hover:visible !bg-none"
+                    />
+                  )}
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+        </CardContent>
+      </div>
+      <div className="flex items-center justify-center p-0">
+        {isAdmin && (
+          <CreateNextMonthDialog
+            budgieId={budgieId}
+            onSuccess={(newMonthId) => onSelectMonth(newMonthId)}
+          />
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -132,7 +136,7 @@ function MonthSelectorMobile({
             <CardTitle className="text-base sm:text-2xl">Month</CardTitle>
             <span className="flex items-center gap-2 font-medium text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              {selectedLabel ?? "Select month"}
+              {selectedLabel ?? 'Select month'}
             </span>
           </CardHeader>
         </DrawerTrigger>
@@ -157,8 +161,8 @@ function MonthSelectorMobile({
                 <button
                   type="button"
                   className={cn(
-                    "flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm transition-colors hover:bg-muted/50",
-                    selectedMonthId === month.id && "bg-muted text-primary"
+                    'flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm transition-colors hover:bg-muted/50',
+                    selectedMonthId === month.id && 'bg-muted text-primary',
                   )}
                   onClick={() => {
                     onSelectMonth(month.id);
@@ -202,7 +206,7 @@ export function MonthSelector({
   const isMobile = useIsMobile();
   const { data: months = [] } = api.month.list.useQuery(
     { budgieId },
-    { enabled: !!budgieId }
+    { enabled: !!budgieId },
   );
 
   // Prefer current month for initial selection; fallback to first (latest)
@@ -210,7 +214,7 @@ export function MonthSelector({
     if (months.length > 0 && selectedMonthId === null) {
       const current = firstDayOfMonth(new Date());
       const currentMonth = months.find((m) =>
-        isSameMonth(new Date(m.date), current)
+        isSameMonth(new Date(m.date), current),
       );
       onSelectMonth(currentMonth?.id ?? months[0]!.id);
     }
@@ -223,7 +227,7 @@ export function MonthSelector({
       if (!exists) {
         const current = firstDayOfMonth(new Date());
         const currentMonth = months.find((m) =>
-          isSameMonth(new Date(m.date), current)
+          isSameMonth(new Date(m.date), current),
         );
         onSelectMonth(currentMonth?.id ?? months[0]!.id);
       }
