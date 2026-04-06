@@ -31,7 +31,7 @@ export class CostService {
       amount: cost.amount.toNumber(),
       contributions: cost.contributions.map((c) => ({
         ...c,
-        percentage: c.percentage.toNumber(),
+        amount: c.amount.toNumber(),
       })),
     }));
   }
@@ -136,17 +136,11 @@ export class CostService {
           status: DEFAULT_PAYMENT_STATUS,
         },
       });
-      const contributorCount = contributors.length;
-      const basePercentage = Math.floor((100 / contributorCount) * 100) / 100;
-      const remainder =
-        Math.round((100 - basePercentage * contributorCount) * 100) / 100;
       await tx.contribution.createMany({
-        data: contributors.map((contributor, index) => ({
+        data: contributors.map((contributor) => ({
           costId: cost.id,
           contributorId: contributor.id,
-          percentage: new Decimal(
-            index === 0 ? basePercentage + remainder : basePercentage
-          ),
+          amount: new Decimal(0),
         })),
       });
       return cost;

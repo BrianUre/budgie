@@ -81,7 +81,7 @@ export function PaymentsPanel({
           (contrib) => contrib.contributorId === contributor.id
         );
         if (contribution) {
-          total += cost.amount * (contribution.percentage / 100);
+          total += contribution.amount;
         }
       }
       map.set(contributor.id, total);
@@ -99,7 +99,7 @@ export function PaymentsPanel({
         );
         if (!contribution) continue;
         const destKey = cost.destinationId ?? cost.destination?.id ?? null;
-        const amount = cost.amount * (contribution.percentage / 100);
+        const amount = contribution.amount;
         inner.set(destKey, (inner.get(destKey) ?? 0) + amount);
       }
       outer.set(contributor.id, inner);
