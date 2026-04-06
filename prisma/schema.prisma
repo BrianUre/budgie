@@ -110,7 +110,7 @@ model Contribution {
   id             String   @id @default(uuid())
   costId         String
   contributorId  String
-  percentage     Decimal  @db.Decimal(5, 2)
+  amount         Decimal  @db.Decimal(10, 2)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

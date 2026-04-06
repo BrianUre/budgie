@@ -107,7 +107,7 @@ export class MonthService {
 
   /**
    * Create costs for the new month from explicit overrides (isActive + amount).
-   * Copies contribution percentages from the latest month's cost per expense when available.
+   * Copies contribution amounts from the latest month's cost per expense when available.
    */
   private async createCostsFromOverrides(
     budgieId: string,
@@ -150,21 +150,15 @@ export class MonthService {
             data: sourceCost.contributions.map((contribution) => ({
               costId: newCost.id,
               contributorId: contribution.contributorId,
-              percentage: contribution.percentage,
+              amount: contribution.amount,
             })),
           });
         } else if (contributors.length > 0) {
-          const contributorCount = contributors.length;
-          const basePercentage = Math.floor((100 / contributorCount) * 100) / 100;
-          const remainder =
-            Math.round((100 - basePercentage * contributorCount) * 100) / 100;
           await tx.contribution.createMany({
-            data: contributors.map((contributor, index) => ({
+            data: contributors.map((contributor) => ({
               costId: newCost.id,
               contributorId: contributor.id,
-              percentage: new Decimal(
-                index === 0 ? basePercentage + remainder : basePercentage
-              ),
+              amount: new Decimal(0),
             })),
           });
         }
@@ -174,7 +168,7 @@ export class MonthService {
 
   /**
    * Copy all costs from source month to target month, including each cost's
-   * contributions (contributorId + percentage).
+   * contributions (contributorId + amount).
    */
   private async duplicateCostsAndContributionsFromMonth(
     sourceMonthId: string,
@@ -206,7 +200,7 @@ export class MonthService {
             data: cost.contributions.map((c) => ({
               costId: newCost.id,
               contributorId: c.contributorId,
-              percentage: c.percentage,
+              amount: c.amount,
             })),
           });
         }

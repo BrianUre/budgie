@@ -94,14 +94,11 @@ export class ExpenseService {
       if (contributors.length === 0) {
         throw new Error("No contributors found");
       }
-      const contributorCount = contributors.length;
-      const basePercentage = Math.floor((100 / contributorCount) * 100) / 100;
-      const remainder = Math.round((100 - basePercentage * contributorCount) * 100) / 100;
       await tx.contribution.createMany({
-        data: contributors.map((contributor, index) => ({
+        data: contributors.map((contributor) => ({
           costId: cost.id,
           contributorId: contributor.id,
-          percentage: new Decimal(index === 0 ? basePercentage + remainder : basePercentage),
+          amount: new Decimal(0),
         })),
       });
 

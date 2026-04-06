@@ -34,7 +34,6 @@ export type Services = ReturnType<typeof createServices>;
 
 export { BudgieService } from "./budgie.service";
 export { ContributionService } from "./contribution.service";
-export type { ContributionInput } from "./contribution.service";
 export { ContributorService } from "./contributor.service";
 export { CostService } from "./cost.service";
 export { DestinationService } from "./destination.service";

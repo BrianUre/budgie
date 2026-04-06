@@ -92,7 +92,7 @@ CREATE TABLE "contributions" (
     "id" TEXT NOT NULL,
     "costId" TEXT NOT NULL,
     "contributorId" TEXT NOT NULL,
-    "percentage" DECIMAL(5,2) NOT NULL,
+    "amount" DECIMAL(10,2) NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

@@ -173,8 +173,7 @@ export function ExpensesTable({
         const contribution = cost.contributions.find(
           (c) => c.contributorId === contributor.id
         );
-        const pct = contribution ? contribution.percentage : 0;
-        sum += cost.amount * (pct / 100);
+        sum += contribution ? contribution.amount : 0;
       }
       byContributor[contributor.id] = sum;
     }

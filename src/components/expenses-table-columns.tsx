@@ -81,20 +81,37 @@ export function buildExpensesTableColumns(
       };
       if (!meta) return null;
       const amount = row.original.amount;
-      return meta.isAdmin ? (
-        <CostAmountEdit
-          value={amount}
-          onSave={(v) =>
-            meta.costMutation.mutateAsync({
-              budgieId: meta.budgieId,
-              costId: row.original.id,
-              amount: v,
-            })
-          }
-          isPending={meta.costMutation.isPending}
-        />
-      ) : (
-        formatMoney(amount)
+      const contributionSum = row.original.contributions.reduce(
+        (sum, c) => sum + c.amount,
+        0
+      );
+      const diff = amount - contributionSum;
+      const showDiff = Math.abs(diff) >= 0.005;
+      return (
+        <div className="relative">
+          {meta.isAdmin ? (
+            <CostAmountEdit
+              value={amount}
+              onSave={(v) =>
+                meta.costMutation.mutateAsync({
+                  budgieId: meta.budgieId,
+                  costId: row.original.id,
+                  amount: v,
+                })
+              }
+              isPending={meta.costMutation.isPending}
+            />
+          ) : (
+            <div className="text-right text-2xl font-zain">{formatMoney(amount)}</div>
+          )}
+          {showDiff && (
+            <span
+              className={`absolute -bottom-4 right-0 text-xs font-mono ${diff > 0 ? "text-red-500" : "text-green-500"}`}
+            >
+              {diff > 0 ? `-${formatMoney(diff)}` : `+${formatMoney(Math.abs(diff))}`}
+            </span>
+          )}
+        </div>
       );
     },
   });
@@ -130,7 +147,6 @@ export function buildExpensesTableColumns(
           return (
             <CostContributionCell
               costId={row.original.id}
-              costAmount={row.original.amount}
               contribution={contribution}
               isAdmin={meta.isAdmin}
               monthId={meta.selectedMonthId}

@@ -168,7 +168,7 @@ export class InvitationService {
           data: costs.map((cost) => ({
             costId: cost.id,
             contributorId: newContributor.id,
-            percentage: new Decimal(0),
+            amount: new Decimal(0),
           })),
         });
       }
