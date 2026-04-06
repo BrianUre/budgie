@@ -147,6 +147,7 @@ export function buildExpensesTableColumns(
           return (
             <CostContributionCell
               costId={row.original.id}
+              contributorId={meta.contributor.id}
               contribution={contribution}
               isAdmin={meta.isAdmin}
               monthId={meta.selectedMonthId}

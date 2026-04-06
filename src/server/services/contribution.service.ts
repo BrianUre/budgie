@@ -36,6 +36,17 @@ export class ContributionService {
       data: { amount: new Decimal(amount) },
     });
   }
+
+  async upsertAmount(costId: string, contributorId: string, amount: number) {
+    if (Number.isNaN(amount) || amount < 0) {
+      throw new Error("Amount must be a valid non-negative number");
+    }
+    return this.db.contribution.upsert({
+      where: { costId_contributorId: { costId, contributorId } },
+      update: { amount: new Decimal(amount) },
+      create: { costId, contributorId, amount: new Decimal(amount) },
+    });
+  }
 }
 
 export type ContributionsForMonth = Awaited<

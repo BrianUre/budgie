@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 
 export class ContributorService {
   constructor(private readonly db: PrismaClient) {}
@@ -32,13 +33,32 @@ export class ContributorService {
       name = user.email;
     }
     if (!name?.trim()) throw new Error("Name is required for contributor");
-    return this.db.contributor.create({
-      data: {
-        budgieId: data.budgieId,
-        name: name.trim(),
-        isAdmin: data.isAdmin ?? false,
-        userId: data.userId ?? null,
-      },
+
+    return this.db.$transaction(async (tx) => {
+      const contributor = await tx.contributor.create({
+        data: {
+          budgieId: data.budgieId,
+          name: name!.trim(),
+          isAdmin: data.isAdmin ?? false,
+          userId: data.userId ?? null,
+        },
+      });
+
+      const costs = await tx.cost.findMany({
+        where: { month: { budgieId: data.budgieId } },
+      });
+
+      if (costs.length > 0) {
+        await tx.contribution.createMany({
+          data: costs.map((cost) => ({
+            costId: cost.id,
+            contributorId: contributor.id,
+            amount: new Decimal(0),
+          })),
+        });
+      }
+
+      return contributor;
     });
   }
 
