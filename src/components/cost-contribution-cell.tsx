@@ -8,6 +8,7 @@ import type { CostRow } from "@/components/expenses-table-columns";
 
 export function CostContributionCell({
   costId,
+  contributorId,
   contribution,
   isAdmin,
   monthId,
@@ -15,6 +16,7 @@ export function CostContributionCell({
   isCurrentUser,
 }: {
   costId: string;
+  contributorId: string;
   contribution: CostRow["contributions"][number] | undefined;
   isAdmin: boolean;
   monthId: string;
@@ -29,6 +31,11 @@ export function CostContributionCell({
       void utils.cost.listForMonth.invalidate({ monthId, budgieId });
     },
   });
+  const upsertAmountMutation = api.contribution.upsertAmount.useMutation({
+    onSuccess: () => {
+      void utils.cost.listForMonth.invalidate({ monthId, budgieId });
+    },
+  });
 
   const amount = contribution ? contribution.amount : 0;
 
@@ -39,12 +46,20 @@ export function CostContributionCell({
 
   const handleSave = async () => {
     const v = parseFloat(draft);
-    if (!Number.isNaN(v) && v >= 0 && contribution) {
-      await setAmountMutation.mutateAsync({
-        costId,
-        contributionId: contribution.id,
-        amount: v,
-      });
+    if (!Number.isNaN(v) && v >= 0) {
+      if (contribution) {
+        await setAmountMutation.mutateAsync({
+          costId,
+          contributionId: contribution.id,
+          amount: v,
+        });
+      } else {
+        await upsertAmountMutation.mutateAsync({
+          costId,
+          contributorId,
+          amount: v,
+        });
+      }
       setEditing(false);
     }
   };

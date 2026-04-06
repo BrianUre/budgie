@@ -38,4 +38,20 @@ export const contributionRouter = createTRPCRouter({
       if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
       return ctx.services.contribution.setAmount(input.contributionId, input.amount);
     }),
+
+  upsertAmount: protectedProcedure
+    .input(
+      z.object({
+        costId: z.string(),
+        contributorId: z.string(),
+        amount: z.number().min(0),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const cost = await ctx.services.cost.getById(input.costId);
+      if (!cost) throw new TRPCError({ code: "NOT_FOUND" });
+      const isAdmin = await ctx.services.contributor.isAdmin(cost.month.budgieId, ctx.auth.userId);
+      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+      return ctx.services.contribution.upsertAmount(input.costId, input.contributorId, input.amount);
+    }),
 });
