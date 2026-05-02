@@ -1,6 +1,7 @@
 import { DEFAULT_PAYMENT_STATUS } from "@/types/payment-status";
 import type { PrismaClient } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
+import { randomUUID } from "node:crypto";
 
 function firstDayOfMonth(date: Date): Date {
   return new Date(
@@ -126,44 +127,45 @@ export class MonthService {
       where: { budgieId },
     });
 
-    await this.db.$transaction(async (tx) => {
-      for (const override of costOverrides) {
-        const newCost = await tx.cost.create({
-          data: {
-            monthId: targetMonthId,
-            expenseId: override.expenseId,
-            amount: new Decimal(override.amount),
-            isActive: override.isActive,
-          },
-        });
-        await tx.paymentStatus.create({
-          data: {
-            costId: newCost.id,
-            status: DEFAULT_PAYMENT_STATUS,
-          },
-        });
-        const sourceCost = sourceCosts.find(
-          (cost) => cost.expenseId === override.expenseId
-        );
-        if (sourceCost?.contributions.length) {
-          await tx.contribution.createMany({
-            data: sourceCost.contributions.map((contribution) => ({
-              costId: newCost.id,
-              contributorId: contribution.contributorId,
-              amount: contribution.amount,
-            })),
-          });
-        } else if (contributors.length > 0) {
-          await tx.contribution.createMany({
-            data: contributors.map((contributor) => ({
-              costId: newCost.id,
-              contributorId: contributor.id,
-              amount: new Decimal(0),
-            })),
-          });
-        }
+    const costsData = costOverrides.map((override) => ({
+      id: randomUUID(),
+      monthId: targetMonthId,
+      expenseId: override.expenseId,
+      amount: new Decimal(override.amount),
+      isActive: override.isActive,
+    }));
+
+    const paymentStatusesData = costsData.map((cost) => ({
+      costId: cost.id,
+      status: DEFAULT_PAYMENT_STATUS,
+    }));
+
+    const contributionsData = costsData.flatMap((cost, index) => {
+      const override = costOverrides[index]!;
+      const sourceCost = sourceCosts.find(
+        (source) => source.expenseId === override.expenseId
+      );
+      if (sourceCost?.contributions.length) {
+        return sourceCost.contributions.map((contribution) => ({
+          costId: cost.id,
+          contributorId: contribution.contributorId,
+          amount: contribution.amount,
+        }));
       }
+      return contributors.map((contributor) => ({
+        costId: cost.id,
+        contributorId: contributor.id,
+        amount: new Decimal(0),
+      }));
     });
+
+    await this.db.$transaction([
+      this.db.cost.createMany({ data: costsData }),
+      this.db.paymentStatus.createMany({ data: paymentStatusesData }),
+      ...(contributionsData.length > 0
+        ? [this.db.contribution.createMany({ data: contributionsData })]
+        : []),
+    ]);
   }
 
   /**
@@ -179,33 +181,34 @@ export class MonthService {
       include: { contributions: true },
     });
 
-    await this.db.$transaction(async (tx) => {
-      for (const cost of costsWithContributions) {
-        const newCost = await tx.cost.create({
-          data: {
-            monthId: targetMonthId,
-            expenseId: cost.expenseId,
-            amount: cost.amount,
-            isActive: cost.isActive,
-          },
-        });
-        await tx.paymentStatus.create({
-          data: {
-            costId: newCost.id,
-            status: DEFAULT_PAYMENT_STATUS,
-          },
-        });
-        if (cost.contributions.length > 0) {
-          await tx.contribution.createMany({
-            data: cost.contributions.map((c) => ({
-              costId: newCost.id,
-              contributorId: c.contributorId,
-              amount: c.amount,
-            })),
-          });
-        }
-      }
-    });
+    const costsData = costsWithContributions.map((cost) => ({
+      id: randomUUID(),
+      monthId: targetMonthId,
+      expenseId: cost.expenseId,
+      amount: cost.amount,
+      isActive: cost.isActive,
+    }));
+
+    const paymentStatusesData = costsData.map((cost) => ({
+      costId: cost.id,
+      status: DEFAULT_PAYMENT_STATUS,
+    }));
+
+    const contributionsData = costsData.flatMap((cost, index) =>
+      costsWithContributions[index]!.contributions.map((contribution) => ({
+        costId: cost.id,
+        contributorId: contribution.contributorId,
+        amount: contribution.amount,
+      }))
+    );
+
+    await this.db.$transaction([
+      this.db.cost.createMany({ data: costsData }),
+      this.db.paymentStatus.createMany({ data: paymentStatusesData }),
+      ...(contributionsData.length > 0
+        ? [this.db.contribution.createMany({ data: contributionsData })]
+        : []),
+    ]);
   }
 
   async delete(monthId: string) {
