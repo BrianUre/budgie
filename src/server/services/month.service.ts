@@ -91,12 +91,17 @@ export class MonthService {
         1
       )
     );
+    const sourceMonthId = months[0]?.id ?? null;
     const newMonth = await this.getOrCreateForBudgie(budgieId, nextDate);
 
     if (costOverrides && costOverrides.length > 0) {
-      await this.createCostsFromOverrides(budgieId, newMonth.id, costOverrides);
-    } else if (months.length > 0) {
-      const sourceMonthId = months[0]!.id;
+      await this.createCostsFromOverrides(
+        budgieId,
+        newMonth.id,
+        sourceMonthId,
+        costOverrides
+      );
+    } else if (sourceMonthId) {
       await this.duplicateCostsAndContributionsFromMonth(
         sourceMonthId,
         newMonth.id
@@ -108,15 +113,16 @@ export class MonthService {
 
   /**
    * Create costs for the new month from explicit overrides (isActive + amount).
-   * Copies contribution amounts from the latest month's cost per expense when available.
+   * Destinations always carry over from the source month's cost per expense.
+   * Contributions carry over only when the override amount equals the source
+   * cost's amount; otherwise contributions reset to 0 for every contributor.
    */
   private async createCostsFromOverrides(
     budgieId: string,
     targetMonthId: string,
+    sourceMonthId: string | null,
     costOverrides: CostOverride[]
   ) {
-    const months = await this.listForBudgie(budgieId);
-    const sourceMonthId = months[0]?.id ?? null;
     const sourceCosts = sourceMonthId
       ? await this.db.cost.findMany({
           where: { monthId: sourceMonthId },
@@ -127,13 +133,24 @@ export class MonthService {
       where: { budgieId },
     });
 
-    const costsData = costOverrides.map((override) => ({
-      id: randomUUID(),
-      monthId: targetMonthId,
-      expenseId: override.expenseId,
-      amount: new Decimal(override.amount),
-      isActive: override.isActive,
-    }));
+    const overridesWithSource = costOverrides.map((override) => {
+      const newAmount = new Decimal(override.amount);
+      const sourceCost = sourceCosts.find(
+        (source) => source.expenseId === override.expenseId
+      );
+      return { override, newAmount, sourceCost };
+    });
+
+    const costsData = overridesWithSource.map(
+      ({ override, newAmount, sourceCost }) => ({
+        id: randomUUID(),
+        monthId: targetMonthId,
+        expenseId: override.expenseId,
+        destinationId: sourceCost?.destinationId ?? null,
+        amount: newAmount,
+        isActive: override.isActive,
+      })
+    );
 
     const paymentStatusesData = costsData.map((cost) => ({
       costId: cost.id,
@@ -141,11 +158,8 @@ export class MonthService {
     }));
 
     const contributionsData = costsData.flatMap((cost, index) => {
-      const override = costOverrides[index]!;
-      const sourceCost = sourceCosts.find(
-        (source) => source.expenseId === override.expenseId
-      );
-      if (sourceCost?.contributions.length) {
+      const { newAmount, sourceCost } = overridesWithSource[index]!;
+      if (sourceCost && sourceCost.amount.equals(newAmount)) {
         return sourceCost.contributions.map((contribution) => ({
           costId: cost.id,
           contributorId: contribution.contributorId,
@@ -185,6 +199,7 @@ export class MonthService {
       id: randomUUID(),
       monthId: targetMonthId,
       expenseId: cost.expenseId,
+      destinationId: cost.destinationId,
       amount: cost.amount,
       isActive: cost.isActive,
     }));
