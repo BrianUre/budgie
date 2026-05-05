@@ -70,7 +70,7 @@ function MonthSelectorDesktop({
                 <CarouselItem
                   key={month.id}
                   className={cn(
-                    'basis-48 overflow-visible px-2 cursor-pointer hover:text-primary-hover flex items-center justify-around hover:bg-muted/50',
+                    'group basis-48 overflow-visible px-2 cursor-pointer hover:text-primary-hover flex items-center justify-around hover:bg-muted/50',
                     // selectedMonthId === month.id && 'text-primary',
                   )}
                   onClick={() => onSelectMonth(month.id)}
