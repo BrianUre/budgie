@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
 import { cn, formatMoney } from "@/lib/utils";
+import { useOptimisticCostListUpdate } from "@/hooks/use-optimistic-cost-list-update";
 import type { CostRow } from "@/components/expenses-table-columns";
 
 export function CostContributionCell({
@@ -25,16 +26,61 @@ export function CostContributionCell({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("0");
-  const utils = api.useUtils();
+  const optimistic = useOptimisticCostListUpdate({ monthId, budgieId });
   const setAmountMutation = api.contribution.setAmount.useMutation({
-    onSuccess: () => {
-      void utils.cost.listForMonth.invalidate({ monthId, budgieId });
-    },
+    onMutate: (input) =>
+      optimistic.apply((rows) =>
+        rows.map((row) =>
+          row.id === input.costId
+            ? {
+                ...row,
+                contributions: row.contributions.map((c) =>
+                  c.id === input.contributionId
+                    ? { ...c, amount: input.amount }
+                    : c
+                ),
+              }
+            : row
+        )
+      ),
+    onError: (_err, _vars, ctx) => optimistic.rollback(ctx?.snapshot),
   });
   const upsertAmountMutation = api.contribution.upsertAmount.useMutation({
-    onSuccess: () => {
-      void utils.cost.listForMonth.invalidate({ monthId, budgieId });
-    },
+    onMutate: (input) =>
+      optimistic.apply((rows) =>
+        rows.map((row) => {
+          if (row.id !== input.costId) return row;
+          const existing = row.contributions.find(
+            (c) => c.contributorId === input.contributorId
+          );
+          if (existing) {
+            return {
+              ...row,
+              contributions: row.contributions.map((c) =>
+                c.contributorId === input.contributorId
+                  ? { ...c, amount: input.amount }
+                  : c
+              ),
+            };
+          }
+          const now = new Date();
+          return {
+            ...row,
+            contributions: [
+              ...row.contributions,
+              {
+                id: `temp_${input.costId}_${input.contributorId}_${Date.now()}`,
+                costId: input.costId,
+                contributorId: input.contributorId,
+                amount: input.amount,
+                createdAt: now,
+                updatedAt: now,
+              },
+            ],
+          };
+        })
+      ),
+    onError: (_err, _vars, ctx) => optimistic.rollback(ctx?.snapshot),
   });
 
   const amount = contribution ? contribution.amount : 0;

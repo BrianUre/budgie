@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/trpc/client";
+import { useOptimisticCostListUpdate } from "@/hooks/use-optimistic-cost-list-update";
 import {
   buildPaymentStatusColumns,
   type PaymentStatusRow,
@@ -45,14 +46,24 @@ export function PaymentStatusSection({
   budgieId,
   monthId,
 }: PaymentStatusSectionProps) {
-  const utils = api.useUtils();
+  const optimistic = useOptimisticCostListUpdate({ monthId, budgieId });
   const updateStatusMutation = api.cost.updatePaymentStatus.useMutation({
-    onSuccess: () => {
-      void utils.cost.listForMonth.invalidate({
-        monthId,
-        budgieId,
-      });
-    },
+    onMutate: (input) =>
+      optimistic.apply((rows) =>
+        rows.map((row) => {
+          if (row.id !== input.costId) return row;
+          if (!row.paymentStatus) return row;
+          return {
+            ...row,
+            paymentStatus: {
+              ...row.paymentStatus,
+              status: input.status,
+              updatedAt: new Date(),
+            },
+          };
+        })
+      ),
+    onError: (_err, _vars, ctx) => optimistic.rollback(ctx?.snapshot),
   });
 
   const [sorting, setSorting] = useState<SortingState>([
