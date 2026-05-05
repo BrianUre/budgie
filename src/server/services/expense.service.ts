@@ -58,6 +58,7 @@ export class ExpenseService {
       name: string;
       initialAmount: number;
       destinationId?: string | null;
+      categoryIds?: string[];
     },
     monthId: string
   ) {
@@ -90,7 +91,7 @@ export class ExpenseService {
       const contributors = await tx.contributor.findMany({
         where: { budgieId: data.budgieId },
       });
-      
+
       if (contributors.length === 0) {
         throw new Error("No contributors found");
       }
@@ -101,6 +102,16 @@ export class ExpenseService {
           amount: new Decimal(0),
         })),
       });
+
+      const categoryIds = Array.from(new Set(data.categoryIds ?? []));
+      if (categoryIds.length > 0) {
+        await tx.costCategory.createMany({
+          data: categoryIds.map((categoryId) => ({
+            costId: cost.id,
+            categoryId,
+          })),
+        });
+      }
 
       return expense;
     });

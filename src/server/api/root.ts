@@ -1,5 +1,6 @@
 import { createTRPCRouter } from "@/server/api/trpc";
 import { budgieRouter } from "@/server/api/routers/budgie";
+import { categoryRouter } from "@/server/api/routers/category";
 import { contributionRouter } from "@/server/api/routers/contribution";
 import { contributorRouter } from "@/server/api/routers/contributor";
 import { costRouter } from "@/server/api/routers/cost";
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   contributor: contributorRouter,
   contribution: contributionRouter,
   destination: destinationRouter,
+  category: categoryRouter,
   invitation: invitationRouter,
 });
 

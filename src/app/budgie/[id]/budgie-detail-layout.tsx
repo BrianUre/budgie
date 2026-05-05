@@ -47,6 +47,10 @@ export function BudgieDetailLayout({
     { budgieId: id },
     { enabled: !!id }
   );
+  const { data: categories = [] } = api.category.list.useQuery(
+    { budgieId: id },
+    { enabled: !!id }
+  );
 
   const contributorsWithSessionFirst = useMemo(() => {
     if (!userId || contributors.length === 0) return contributors;
@@ -96,6 +100,7 @@ export function BudgieDetailLayout({
     contributors,
     contributorsWithSessionFirst,
     destinations,
+    categories,
     selectedMonthId,
     setSelectedMonthId,
     userId: userId ?? null,

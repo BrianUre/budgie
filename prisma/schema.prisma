@@ -36,6 +36,7 @@ model Budgie {
   contributors Contributor[]
   invitations  Invitation[]
   destinations Destination[]
+  categories   Category[]
 
   @@map("budgies")
 }
@@ -85,9 +86,36 @@ model Cost {
   destination    Destination?   @relation(fields: [destinationId], references: [id], onDelete: Cascade)
   contributions  Contribution[]
   paymentStatus  PaymentStatus?
+  costCategories CostCategory[]
 
   @@unique([monthId, expenseId])
   @@map("costs")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  budgieId  String
+  name      String
+  color     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  budgie         Budgie         @relation(fields: [budgieId], references: [id], onDelete: Cascade)
+  costCategories CostCategory[]
+
+  @@map("categories")
+}
+
+model CostCategory {
+  costId     String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  cost     Cost     @relation(fields: [costId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([costId, categoryId])
+  @@map("cost_categories")
 }
 
 model Contributor {

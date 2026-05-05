@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/trpc/client";
 import { DestinationDropdown } from "@/components/destination-dropdown";
+import { CategoryMultiSelect } from "@/components/category-multi-select";
 import { RemoveExpenseDialog } from "@/components/remove-expense-dialog";
 import { Checkbox } from "./ui/checkbox";
 
@@ -16,6 +17,7 @@ export type ExpenseActivityItem = {
   isActive: boolean;
   amount: number;
   destinationId: string | null;
+  categoryIds: string[];
 };
 
 /**
@@ -47,7 +49,9 @@ interface ExpenseActivityListProps {
   allowToggleWhenNoCost?: boolean;
   /** Show a destination dropdown per row (only for rows with costId). Requires `budgieId` and `selectedMonthId`. */
   showDestinationDropdown?: boolean;
-  /** Budgie that owns these expenses. Required when `showDestinationDropdown` or `showArchiveButton` is true. */
+  /** Show a category multi-select per row (only for rows with costId). Requires `budgieId` and `selectedMonthId`. */
+  showCategoryMultiSelect?: boolean;
+  /** Budgie that owns these expenses. Required when `showDestinationDropdown`, `showCategoryMultiSelect`, or `showArchiveButton` is true. */
   budgieId?: string;
   /** Currently selected month. Required when `showDestinationDropdown` or `showArchiveButton` is true. */
   selectedMonthId?: string | null;
@@ -68,6 +72,7 @@ export function ExpenseActivityList({
   showArchiveButton = false,
   allowToggleWhenNoCost = false,
   showDestinationDropdown = false,
+  showCategoryMultiSelect = false,
   budgieId,
   selectedMonthId,
   manageDestinationsTrigger,
@@ -77,6 +82,17 @@ export function ExpenseActivityList({
   const utils = api.useUtils();
 
   const updateDestinationMutation = api.cost.updateDestination.useMutation({
+    onSuccess: () => {
+      if (selectedMonthId && budgieId) {
+        void utils.cost.listForMonth.invalidate({
+          monthId: selectedMonthId,
+          budgieId,
+        });
+      }
+    },
+  });
+
+  const updateCategoriesMutation = api.cost.updateCategories.useMutation({
     onSuccess: () => {
       if (selectedMonthId && budgieId) {
         void utils.cost.listForMonth.invalidate({
@@ -104,9 +120,9 @@ export function ExpenseActivityList({
         {items.map((item) => (
           <li
             key={item.expenseId}
-            className="grid grid-cols-3 items-center gap-3 rounded-md border px-3 py-2"
+            className="flex flex-wrap items-center gap-3 rounded-md border px-3 py-2"
           >
-            <label className="flex cursor-pointer items-center gap-2">
+            <label className="flex flex-1 min-w-[8rem] cursor-pointer items-center gap-2">
               <Checkbox
                 checked={item.isActive}
                 onCheckedChange={(checked) =>
@@ -149,6 +165,24 @@ export function ExpenseActivityList({
                   }
                   disabled={disabled || updateDestinationMutation.isPending}
                   placeholder="Destination"
+                  className="h-8 min-w-[10rem]"
+                />
+              )}
+            {showCategoryMultiSelect &&
+              budgieId &&
+              item.costId !== null && (
+                <CategoryMultiSelect
+                  budgieId={budgieId}
+                  value={item.categoryIds}
+                  onValueChange={(categoryIds) =>
+                    updateCategoriesMutation.mutate({
+                      costId: item.costId!,
+                      categoryIds,
+                      budgieId: budgieId!,
+                    })
+                  }
+                  disabled={disabled || updateCategoriesMutation.isPending}
+                  placeholder="Categories"
                   className="h-8 min-w-[10rem]"
                 />
               )}

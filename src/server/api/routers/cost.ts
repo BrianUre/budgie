@@ -85,6 +85,41 @@ export const costRouter = createTRPCRouter({
       );
     }),
 
+  updateCategories: protectedProcedure
+    .input(
+      z.object({
+        costId: z.string(),
+        categoryIds: z.array(z.string()),
+        budgieId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const isAdmin = await ctx.services.contributor.isAdmin(
+        input.budgieId,
+        ctx.auth.userId
+      );
+      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const cost = await ctx.services.cost.getById(input.costId);
+      if (!cost || cost.month.budgieId !== input.budgieId)
+        throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (input.categoryIds.length > 0) {
+        const categories = await ctx.services.category.listByBudgie(
+          input.budgieId
+        );
+        const validIds = new Set(categories.map((c) => c.id));
+        const allBelong = input.categoryIds.every((id) => validIds.has(id));
+        if (!allBelong) throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      await ctx.services.category.setCategoriesForCost(
+        input.costId,
+        input.categoryIds
+      );
+      return { ok: true };
+    }),
+
   updatePaymentStatus: protectedProcedure
     .input(
       z.object({

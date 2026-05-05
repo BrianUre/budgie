@@ -21,6 +21,7 @@ import {
 } from "@/components/expense-activity-list";
 import { DestinationDropdown } from "@/components/destination-dropdown";
 import { AddDestinationDialog } from "@/components/add-destination-dialog";
+import { CategoryMultiSelect } from "@/components/category-multi-select";
 import { Plus } from "lucide-react";
 
 interface ManageExpensesDialogProps {
@@ -108,6 +109,7 @@ export function ManageExpensesDialog({
 
   /** Kept in component state so it survives form reset (TanStack Form can revert to defaultValues after async reset). */
   const [addExpenseDestinationId, setAddExpenseDestinationId] = useState<string | null>(null);
+  const [addExpenseCategoryIds, setAddExpenseCategoryIds] = useState<string[]>([]);
 
   const expenseForm = useForm({
     defaultValues: { name: "", initialAmount: 0 },
@@ -119,9 +121,11 @@ export function ManageExpensesDialog({
         name: value.name.trim(),
         initialAmount: value.initialAmount,
         destinationId: addExpenseDestinationId,
+        categoryIds: addExpenseCategoryIds,
       });
       expenseForm.reset();
-      // Destination is intentionally not reset so the user can add multiple expenses to the same destination.
+      // Destination and categories intentionally persist across submits so the user
+      // can add multiple expenses to the same destination/categories.
     },
   });
 
@@ -137,6 +141,7 @@ export function ManageExpensesDialog({
         isActive: cost?.isActive ?? false,
         amount: cost ? Number(cost.amount) : 0,
         destinationId: cost?.destinationId ?? cost?.destination?.id ?? null,
+        categoryIds: cost?.costCategories?.map((cc) => cc.categoryId) ?? [],
       };
     });
   }, [expenses, costsForMonth]);
@@ -238,6 +243,12 @@ export function ManageExpensesDialog({
                   onValueChange={setAddExpenseDestinationId}
                   placeholder="Destination"
                 />
+                <CategoryMultiSelect
+                  budgieId={budgieId}
+                  value={addExpenseCategoryIds}
+                  onValueChange={setAddExpenseCategoryIds}
+                  placeholder="Categories"
+                />
               <expenseForm.Subscribe
                 selector={(state): [string, number, boolean] => [
                   state.values.name,
@@ -284,6 +295,7 @@ export function ManageExpensesDialog({
               onAddToMonth={handleAddToMonth}
               showArchiveButton
               showDestinationDropdown
+              showCategoryMultiSelect
               budgieId={budgieId}
               selectedMonthId={selectedMonthId}
               disabled={
