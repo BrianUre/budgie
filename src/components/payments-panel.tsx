@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import {
   Card,
@@ -18,6 +18,7 @@ import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CreditCard } from "lucide-react";
 import { PaymentStatusSection } from "@/components/payment-status-section";
+import { CategoryFilterDropdown } from "@/components/category-filter-dropdown";
 import type { CostListForMonthItem } from "@/server/api/routers/cost";
 import type { ContributorListItem } from "@/server/api/routers/contributor";
 import type { DestinationListItem } from "@/server/api/routers/destination";
@@ -57,26 +58,37 @@ export function PaymentsPanel({
   isAdmin,
   className,
 }: PaymentsPanelProps) {
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
+
+  const filteredCosts = useMemo(() => {
+    if (!selectedCategoryId) return costs;
+    return costs.filter((cost) =>
+      cost.costCategories?.some((cc) => cc.categoryId === selectedCategoryId)
+    );
+  }, [costs, selectedCategoryId]);
+
   const totalCostAmount = useMemo(
-    () => costs.reduce((sum, cost) => sum + cost.amount, 0),
-    [costs]
+    () => filteredCosts.reduce((sum, cost) => sum + cost.amount, 0),
+    [filteredCosts]
   );
 
   const totalByDestination = useMemo(() => {
     const map = new Map<string | null, number>();
-    for (const cost of costs) {
+    for (const cost of filteredCosts) {
       const key = cost.destinationId ?? cost.destination?.id ?? null;
       const current = map.get(key) ?? 0;
       map.set(key, current + cost.amount);
     }
     return map;
-  }, [costs]);
+  }, [filteredCosts]);
 
   const totalByContributor = useMemo(() => {
     const map = new Map<string, number>();
     for (const contributor of contributors) {
       let total = 0;
-      for (const cost of costs) {
+      for (const cost of filteredCosts) {
         const contribution = cost.contributions?.find(
           (contrib) => contrib.contributorId === contributor.id
         );
@@ -87,13 +99,13 @@ export function PaymentsPanel({
       map.set(contributor.id, total);
     }
     return map;
-  }, [contributors, costs]);
+  }, [contributors, filteredCosts]);
 
   const totalByContributorByDestination = useMemo(() => {
     const outer = new Map<string, Map<string | null, number>>();
     for (const contributor of contributors) {
       const inner = new Map<string | null, number>();
-      for (const cost of costs) {
+      for (const cost of filteredCosts) {
         const contribution = cost.contributions?.find(
           (contrib) => contrib.contributorId === contributor.id
         );
@@ -105,7 +117,7 @@ export function PaymentsPanel({
       outer.set(contributor.id, inner);
     }
     return outer;
-  }, [contributors, costs]);
+  }, [contributors, filteredCosts]);
 
   const hasNoDestination = totalByDestination.has(null);
   const destinationRows = useMemo(() => {
@@ -130,11 +142,19 @@ export function PaymentsPanel({
 
   return (
     <div className={cn("space-y-4", className)}>
-      <div className="flex items-center gap-2">
-        <CreditCard
-          className="h-6 w-6 text-tertiary"
-        />
-      <h3 className="text-base sm:text-2xl font-zain font-medium">Payments</h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <CreditCard className="h-6 w-6 text-tertiary" />
+        <h3 className="text-base sm:text-2xl font-zain font-medium">
+          Payments
+        </h3>
+        <div className="ml-auto">
+          <CategoryFilterDropdown
+            budgieId={budgieId}
+            value={selectedCategoryId}
+            onValueChange={setSelectedCategoryId}
+            className="h-9 min-w-[12rem]"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -306,7 +326,7 @@ export function PaymentsPanel({
         </div>
 
         <PaymentStatusSection
-          costs={costs}
+          costs={filteredCosts}
           isAdmin={isAdmin}
           budgieId={budgieId}
           monthId={monthId}

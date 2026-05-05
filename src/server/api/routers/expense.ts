@@ -27,6 +27,7 @@ export const expenseRouter = createTRPCRouter({
         name: z.string().min(1).max(200),
         initialAmount: z.number().min(0),
         destinationId: z.string().nullable().optional(),
+        categoryIds: z.array(z.string()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -41,12 +42,21 @@ export const expenseRouter = createTRPCRouter({
         if (!destination || destination.budgieId !== input.budgieId)
           throw new TRPCError({ code: "NOT_FOUND" });
       }
+      if (input.categoryIds && input.categoryIds.length > 0) {
+        const categories = await ctx.services.category.listByBudgie(
+          input.budgieId
+        );
+        const validIds = new Set(categories.map((c) => c.id));
+        const allBelong = input.categoryIds.every((id) => validIds.has(id));
+        if (!allBelong) throw new TRPCError({ code: "NOT_FOUND" });
+      }
       return ctx.services.expense.create(
         {
           budgieId: input.budgieId,
           name: input.name,
           initialAmount: input.initialAmount,
           destinationId: destinationId ?? null,
+          categoryIds: input.categoryIds,
         },
         input.monthId
       );

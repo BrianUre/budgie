@@ -113,9 +113,10 @@ export class MonthService {
 
   /**
    * Create costs for the new month from explicit overrides (isActive + amount).
-   * Destinations always carry over from the source month's cost per expense.
-   * Contributions carry over only when the override amount equals the source
-   * cost's amount; otherwise contributions reset to 0 for every contributor.
+   * Destinations and categories always carry over from the source month's cost
+   * per expense. Contributions carry over only when the override amount equals
+   * the source cost's amount; otherwise contributions reset to 0 for every
+   * contributor.
    */
   private async createCostsFromOverrides(
     budgieId: string,
@@ -126,7 +127,7 @@ export class MonthService {
     const sourceCosts = sourceMonthId
       ? await this.db.cost.findMany({
           where: { monthId: sourceMonthId },
-          include: { contributions: true },
+          include: { contributions: true, costCategories: true },
         })
       : [];
     const contributors = await this.db.contributor.findMany({
@@ -173,18 +174,30 @@ export class MonthService {
       }));
     });
 
+    const costCategoriesData = costsData.flatMap((cost, index) => {
+      const { sourceCost } = overridesWithSource[index]!;
+      if (!sourceCost) return [];
+      return sourceCost.costCategories.map((cc) => ({
+        costId: cost.id,
+        categoryId: cc.categoryId,
+      }));
+    });
+
     await this.db.$transaction([
       this.db.cost.createMany({ data: costsData }),
       this.db.paymentStatus.createMany({ data: paymentStatusesData }),
       ...(contributionsData.length > 0
         ? [this.db.contribution.createMany({ data: contributionsData })]
         : []),
+      ...(costCategoriesData.length > 0
+        ? [this.db.costCategory.createMany({ data: costCategoriesData })]
+        : []),
     ]);
   }
 
   /**
    * Copy all costs from source month to target month, including each cost's
-   * contributions (contributorId + amount).
+   * contributions (contributorId + amount) and category links.
    */
   private async duplicateCostsAndContributionsFromMonth(
     sourceMonthId: string,
@@ -192,7 +205,7 @@ export class MonthService {
   ) {
     const costsWithContributions = await this.db.cost.findMany({
       where: { monthId: sourceMonthId },
-      include: { contributions: true },
+      include: { contributions: true, costCategories: true },
     });
 
     const costsData = costsWithContributions.map((cost) => ({
@@ -217,11 +230,21 @@ export class MonthService {
       }))
     );
 
+    const costCategoriesData = costsData.flatMap((cost, index) =>
+      costsWithContributions[index]!.costCategories.map((cc) => ({
+        costId: cost.id,
+        categoryId: cc.categoryId,
+      }))
+    );
+
     await this.db.$transaction([
       this.db.cost.createMany({ data: costsData }),
       this.db.paymentStatus.createMany({ data: paymentStatusesData }),
       ...(contributionsData.length > 0
         ? [this.db.contribution.createMany({ data: contributionsData })]
+        : []),
+      ...(costCategoriesData.length > 0
+        ? [this.db.costCategory.createMany({ data: costCategoriesData })]
         : []),
     ]);
   }

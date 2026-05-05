@@ -24,6 +24,7 @@ export class CostService {
         contributions: true,
         destination: true,
         paymentStatus: true,
+        costCategories: { include: { category: true } },
       },
     });
     return costs.map((cost) => ({

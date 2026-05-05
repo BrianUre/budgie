@@ -92,6 +92,7 @@ export function CreateNextMonthDialog({
         isActive: draftOverrides[expense.id]?.isActive ?? true,
         amount: draftOverrides[expense.id]?.amount ?? 0,
         destinationId: cost?.destination?.id ?? null,
+        categoryIds: cost?.costCategories?.map((cc) => cc.categoryId) ?? [],
       };
     });
   }, [expenses, draftOverrides]);

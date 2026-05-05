@@ -13,6 +13,7 @@ const NAV_ROUTES = [
   { segment: "expenses", label: "Expenses" },
   { segment: "payments", label: "Payments" },
   { segment: "destinations", label: "Destinations" },
+  { segment: "categories", label: "Categories" },
   { segment: "collaborators", label: "Contributors" },
 ] as const;
 

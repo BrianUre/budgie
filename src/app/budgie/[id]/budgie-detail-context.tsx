@@ -1,10 +1,12 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { CategoryListItem } from "@/server/api/routers/category";
 import type { ContributorListItem } from "@/server/api/routers/contributor";
 import type { DestinationListItem } from "@/server/api/routers/destination";
 
 export type Destination = DestinationListItem;
+export type Category = CategoryListItem;
 
 export type BudgieDetailContextValue = {
   budgieId: string;
@@ -13,6 +15,7 @@ export type BudgieDetailContextValue = {
   contributors: ContributorListItem[];
   contributorsWithSessionFirst: ContributorListItem[];
   destinations: Destination[];
+  categories: Category[];
   selectedMonthId: string | null;
   setSelectedMonthId: (id: string | null) => void;
   userId: string | null;
