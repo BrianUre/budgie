@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/trpc/client";
+import { useOptimisticCostListUpdate } from "@/hooks/use-optimistic-cost-list-update";
 import { DestinationDropdown } from "@/components/destination-dropdown";
 import { CategoryMultiSelect } from "@/components/category-multi-select";
 import { RemoveExpenseDialog } from "@/components/remove-expense-dialog";
@@ -80,27 +81,66 @@ export function ExpenseActivityList({
   className,
 }: ExpenseActivityListProps) {
   const utils = api.useUtils();
+  const optimistic = useOptimisticCostListUpdate({
+    monthId: selectedMonthId ?? "",
+    budgieId: budgieId ?? "",
+  });
 
   const updateDestinationMutation = api.cost.updateDestination.useMutation({
-    onSuccess: () => {
-      if (selectedMonthId && budgieId) {
-        void utils.cost.listForMonth.invalidate({
-          monthId: selectedMonthId,
-          budgieId,
-        });
-      }
+    onMutate: (input) => {
+      if (!selectedMonthId || !budgieId) return;
+      const destinations =
+        utils.destination.list.getData({ budgieId }) ?? [];
+      const nextDestination =
+        input.destinationId != null && input.destinationId !== ""
+          ? destinations.find((d) => d.id === input.destinationId) ?? null
+          : null;
+      return optimistic.apply((rows) =>
+        rows.map((row) =>
+          row.id === input.costId
+            ? {
+                ...row,
+                destinationId:
+                  input.destinationId === "" ? null : input.destinationId,
+                destination: nextDestination,
+              }
+            : row
+        )
+      );
     },
+    onError: (_err, _vars, ctx) => optimistic.rollback(ctx?.snapshot),
   });
 
   const updateCategoriesMutation = api.cost.updateCategories.useMutation({
-    onSuccess: () => {
-      if (selectedMonthId && budgieId) {
-        void utils.cost.listForMonth.invalidate({
-          monthId: selectedMonthId,
-          budgieId,
-        });
-      }
+    onMutate: (input) => {
+      if (!selectedMonthId || !budgieId) return;
+      const categories =
+        utils.category.list.getData({ budgieId: input.budgieId }) ?? [];
+      const categoriesById = new Map(categories.map((c) => [c.id, c]));
+      const now = new Date();
+      return optimistic.apply((rows) =>
+        rows.map((row) =>
+          row.id === input.costId
+            ? {
+                ...row,
+                costCategories: input.categoryIds.flatMap((categoryId) => {
+                  const category = categoriesById.get(categoryId);
+                  if (!category) return [];
+                  return [
+                    {
+                      costId: input.costId,
+                      categoryId,
+                      createdAt: now,
+                      category,
+                    },
+                  ];
+                }),
+              }
+            : row
+        )
+      );
     },
+    onError: (_err, _vars, ctx) => optimistic.rollback(ctx?.snapshot),
   });
 
   if (items.length === 0) {

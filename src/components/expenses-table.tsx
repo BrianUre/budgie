@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useOptimisticCostListUpdate } from "@/hooks/use-optimistic-cost-list-update";
 import { cn, formatMoney } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -116,14 +117,18 @@ export function ExpensesTable({
   const isMobile = useIsMobile();
   const [extraColumnIndex, setExtraColumnIndex] = useState(0);
 
-  const utils = api.useUtils();
+  const optimistic = useOptimisticCostListUpdate({
+    monthId: selectedMonthId,
+    budgieId,
+  });
   const costMutation = api.cost.updateAmount.useMutation({
-    onSuccess: () => {
-      void utils.cost.listForMonth.invalidate({
-        monthId: selectedMonthId,
-        budgieId,
-      });
-    },
+    onMutate: (input) =>
+      optimistic.apply((rows) =>
+        rows.map((row) =>
+          row.id === input.costId ? { ...row, amount: input.amount } : row
+        )
+      ),
+    onError: (_err, _vars, ctx) => optimistic.rollback(ctx?.snapshot),
   });
 
   const columnHelper = createColumnHelper<CostRow>();
