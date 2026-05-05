@@ -1,5 +1,14 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type SortingState,
+} from "@tanstack/react-table";
 import {
   Card,
   CardContent,
@@ -14,27 +23,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/trpc/client";
 import {
-  PaymentStatusSelector,
-} from "@/components/payment-status-selector";
-import { DEFAULT_PAYMENT_STATUS, type PaymentStatusType } from "@/types/payment-status";
+  buildPaymentStatusColumns,
+  type PaymentStatusRow,
+} from "@/components/payment-status-table-columns";
 import type { CostListForMonthItem } from "@/server/api/routers/cost";
 
 interface PaymentStatusSectionProps {
-  /** Costs for the selected month, used to render name, amount, and status. */
+  /** Costs for the selected month, used to render name, destination, amount, and status. */
   costs: CostListForMonthItem[];
   isAdmin: boolean;
   budgieId: string;
   monthId: string;
 }
 
-/**
- * Renders the "Expenses this month" card: a table of name, amount, and status
- * with a one-click status selector per row.
- */
 export function PaymentStatusSection({
   costs,
   isAdmin,
@@ -51,6 +55,45 @@ export function PaymentStatusSection({
     },
   });
 
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "name", desc: false },
+  ]);
+
+  const columnHelper = createColumnHelper<PaymentStatusRow>();
+  const columns = useMemo(
+    () =>
+      buildPaymentStatusColumns({
+        columnHelper,
+        isAdmin,
+        budgieId,
+        updateStatusMutation,
+      }),
+    [columnHelper, isAdmin, budgieId, updateStatusMutation]
+  );
+
+  const table = useReactTable({
+    data: costs,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  const columnAlign: Record<string, "left" | "right"> = {
+    name: "left",
+    destination: "left",
+    amount: "right",
+    status: "right",
+  };
+
+  const columnWidth: Record<string, string> = {
+    name: "w-[35%]",
+    destination: "w-[25%]",
+    amount: "w-[20%]",
+    status: "w-[20%]",
+  };
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-2">
@@ -59,40 +102,46 @@ export function PaymentStatusSection({
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-1/2">Name</TableHead>
-              <TableHead className="w-1/4 text-right">Amount</TableHead>
-              <TableHead className="w-1/4 text-right">Status</TableHead>
-            </TableRow>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  const align = columnAlign[header.column.id] ?? "left";
+                  const width = columnWidth[header.column.id];
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className={cn(
+                        width,
+                        align === "right" && "text-right"
+                      )}
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
           </TableHeader>
           <TableBody>
-            {costs.map((cost) => (
-              <TableRow
-                key={cost.id}
-                className={cn(
-                  "transition-colors"
-                )}
-              >
-                <TableCell className="font-medium font-zain text-lg">
-                  {cost.expense.name}
-                </TableCell>
-                <TableCell className="text-right font-zain text-lg">
-                  {formatMoney(cost.amount)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <PaymentStatusSelector
-                    value={(cost.paymentStatus?.status ?? DEFAULT_PAYMENT_STATUS) as PaymentStatusType}
-                    disabled={!isAdmin}
-                    onChange={(nextStatus) => {
-                      if (!isAdmin) return;
-                      updateStatusMutation.mutate({
-                        costId: cost.id,
-                        status: nextStatus,
-                        budgieId,
-                      });
-                    }}
-                  />
-                </TableCell>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id} className="transition-colors">
+                {row.getVisibleCells().map((cell) => {
+                  const align = columnAlign[cell.column.id] ?? "left";
+                  return (
+                    <TableCell
+                      key={cell.id}
+                      className={cn(align === "right" && "text-right")}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             ))}
           </TableBody>
