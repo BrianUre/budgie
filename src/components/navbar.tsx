@@ -29,7 +29,7 @@ export function Navbar() {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
-    <nav className="border-b border-border">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background">
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-4 sm:px-8">
         <Link href="/">
           <Image src="/budgie-logo.svg" alt="Budgie" width={32} height={32} />
