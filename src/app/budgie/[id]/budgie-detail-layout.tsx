@@ -67,7 +67,7 @@ export function BudgieDetailLayout({
 
   if (!isLoaded || budgieLoading || !id) {
     return (
-      <main className="flex min-h-screen flex-col p-8">
+      <main className="flex min-h-screen flex-col items-center justify-center p-8">
         <p className="text-muted-foreground">Loading…</p>
       </main>
     );

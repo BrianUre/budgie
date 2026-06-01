@@ -33,7 +33,7 @@ export function DashboardClient() {
 
   if (!isLoaded || isLoading) {
     return (
-      <main className="flex min-h-screen flex-col p-8">
+      <main className="flex min-h-screen flex-col items-center justify-center p-8">
         <p className="text-muted-foreground">Loading budgies…</p>
       </main>
     );

@@ -5,5 +5,5 @@ export default function BudgieViewPage({
 }: {
   params: { id: string };
 }) {
-  redirect(`/budgie/${params.id}/expenses`);
+  redirect(`/budgie/${params.id}/payments`);
 }

@@ -10,8 +10,8 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const NAV_ROUTES = [
-  { segment: "expenses", label: "Expenses" },
   { segment: "payments", label: "Payments" },
+  { segment: "expenses", label: "Expenses" },
   { segment: "destinations", label: "Destinations" },
   { segment: "categories", label: "Categories" },
   { segment: "collaborators", label: "Contributors" },
@@ -23,13 +23,13 @@ export function Navbar() {
   const segments = useSelectedLayoutSegments();
   // segments = ["budgie", "<id>", "<segment>"] on budgie detail pages
   const budgieId = segments[0] === "budgie" && params.id ? (params.id as string) : null;
-  const currentSegment = segments[2] ?? "expenses";
+  const currentSegment = segments[2] ?? "payments";
   const basePath = budgieId ? `/budgie/${budgieId}` : null;
 
   const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
-    <nav className="border-b border-border">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background">
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-4 sm:px-8">
         <Link href="/">
           <Image src="/budgie-logo.svg" alt="Budgie" width={32} height={32} />

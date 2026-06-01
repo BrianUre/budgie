@@ -16,9 +16,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { CreditCard } from "lucide-react";
+import { CreditCard, ListFilter } from "lucide-react";
 import { PaymentStatusSection } from "@/components/payment-status-section";
 import { CategoryFilterDropdown } from "@/components/category-filter-dropdown";
+import { DestinationFilterDropdown, DESTINATION_NONE } from "@/components/destination-filter-dropdown";
+import { ContributorFilterDropdown } from "@/components/contributor-filter-dropdown";
 import type { CostListForMonthItem } from "@/server/api/routers/cost";
 import type { ContributorListItem } from "@/server/api/routers/contributor";
 import type { DestinationListItem } from "@/server/api/routers/destination";
@@ -58,16 +60,26 @@ export function PaymentsPanel({
   isAdmin,
   className,
 }: PaymentsPanelProps) {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
+  // Non-admins default to filtering by their own contributions; admins see all.
+  const [selectedContributorId, setSelectedContributorId] = useState<string | null>(
+    () =>
+      isAdmin || !currentUserId
+        ? null
+        : contributors.find((contributor) => contributor.userId === currentUserId)
+            ?.id ?? null
   );
 
   const filteredCosts = useMemo(() => {
-    if (!selectedCategoryId) return costs;
-    return costs.filter((cost) =>
-      cost.costCategories?.some((cc) => cc.categoryId === selectedCategoryId)
-    );
-  }, [costs, selectedCategoryId]);
+    return costs.filter((cost) => {
+      if (selectedCategoryId && !cost.costCategories?.some((cc) => cc.categoryId === selectedCategoryId)) return false;
+      if (selectedDestinationId === DESTINATION_NONE && cost.destinationId != null) return false;
+      if (selectedDestinationId && selectedDestinationId !== DESTINATION_NONE && cost.destinationId !== selectedDestinationId) return false;
+      if (selectedContributorId && !cost.contributions?.some((c) => c.contributorId === selectedContributorId && c.amount > 0)) return false;
+      return true;
+    });
+  }, [costs, selectedCategoryId, selectedDestinationId, selectedContributorId]);
 
   const totalCostAmount = useMemo(
     () => filteredCosts.reduce((sum, cost) => sum + cost.amount, 0),
@@ -119,6 +131,16 @@ export function PaymentsPanel({
     return outer;
   }, [contributors, filteredCosts]);
 
+  // When filtering by a contributor, only that contributor's card is shown so
+  // the section above the table matches the per-user amounts in the table.
+  const visibleContributors = useMemo(
+    () =>
+      selectedContributorId
+        ? contributors.filter((contributor) => contributor.id === selectedContributorId)
+        : contributors,
+    [contributors, selectedContributorId]
+  );
+
   const hasNoDestination = totalByDestination.has(null);
   const destinationRows = useMemo(() => {
     const rows: Array<{
@@ -147,14 +169,6 @@ export function PaymentsPanel({
         <h3 className="text-base sm:text-2xl font-zain font-medium">
           Payments
         </h3>
-        <div className="ml-auto">
-          <CategoryFilterDropdown
-            budgieId={budgieId}
-            value={selectedCategoryId}
-            onValueChange={setSelectedCategoryId}
-            className="h-9 min-w-[12rem]"
-          />
-        </div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -222,9 +236,37 @@ export function PaymentsPanel({
           </CardContent>
         </Card>
 
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <ListFilter className="h-6 w-6 text-tertiary" />
+            <h3 className="text-base sm:text-2xl font-zain font-medium">Filters</h3>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <ContributorFilterDropdown
+              contributors={contributors}
+              value={selectedContributorId}
+              onValueChange={setSelectedContributorId}
+              className="h-9 min-w-[12rem]"
+              />
+            <DestinationFilterDropdown
+              destinations={destinations}
+              value={selectedDestinationId}
+              onValueChange={setSelectedDestinationId}
+              className="h-9 min-w-[12rem]"
+              />
+            <CategoryFilterDropdown
+              budgieId={budgieId}
+              value={selectedCategoryId}
+              onValueChange={setSelectedCategoryId}
+              className="h-9 min-w-[12rem]"
+              />
+          </div>
+        </div>
+
         {/* One item per contributor: narrow vertical cards in a grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {contributors.map((contributor) => (
+          {visibleContributors.map((contributor) => (
             <Card
               key={contributor.id}
               className={cn(
@@ -327,6 +369,7 @@ export function PaymentsPanel({
 
         <PaymentStatusSection
           costs={filteredCosts}
+          selectedContributorId={selectedContributorId}
           isAdmin={isAdmin}
           budgieId={budgieId}
           monthId={monthId}
