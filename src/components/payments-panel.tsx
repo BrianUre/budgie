@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 import { CreditCard } from "lucide-react";
 import { PaymentStatusSection } from "@/components/payment-status-section";
 import { CategoryFilterDropdown } from "@/components/category-filter-dropdown";
+import { DestinationFilterDropdown, DESTINATION_NONE } from "@/components/destination-filter-dropdown";
+import { ContributorFilterDropdown } from "@/components/contributor-filter-dropdown";
 import type { CostListForMonthItem } from "@/server/api/routers/cost";
 import type { ContributorListItem } from "@/server/api/routers/contributor";
 import type { DestinationListItem } from "@/server/api/routers/destination";
@@ -58,16 +60,19 @@ export function PaymentsPanel({
   isAdmin,
   className,
 }: PaymentsPanelProps) {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null
-  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
+  const [selectedContributorId, setSelectedContributorId] = useState<string | null>(null);
 
   const filteredCosts = useMemo(() => {
-    if (!selectedCategoryId) return costs;
-    return costs.filter((cost) =>
-      cost.costCategories?.some((cc) => cc.categoryId === selectedCategoryId)
-    );
-  }, [costs, selectedCategoryId]);
+    return costs.filter((cost) => {
+      if (selectedCategoryId && !cost.costCategories?.some((cc) => cc.categoryId === selectedCategoryId)) return false;
+      if (selectedDestinationId === DESTINATION_NONE && cost.destinationId != null) return false;
+      if (selectedDestinationId && selectedDestinationId !== DESTINATION_NONE && cost.destinationId !== selectedDestinationId) return false;
+      if (selectedContributorId && !cost.contributions?.some((c) => c.contributorId === selectedContributorId && c.amount > 0)) return false;
+      return true;
+    });
+  }, [costs, selectedCategoryId, selectedDestinationId, selectedContributorId]);
 
   const totalCostAmount = useMemo(
     () => filteredCosts.reduce((sum, cost) => sum + cost.amount, 0),
@@ -147,7 +152,19 @@ export function PaymentsPanel({
         <h3 className="text-base sm:text-2xl font-zain font-medium">
           Payments
         </h3>
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <ContributorFilterDropdown
+            contributors={contributors}
+            value={selectedContributorId}
+            onValueChange={setSelectedContributorId}
+            className="h-9 min-w-[12rem]"
+          />
+          <DestinationFilterDropdown
+            destinations={destinations}
+            value={selectedDestinationId}
+            onValueChange={setSelectedDestinationId}
+            className="h-9 min-w-[12rem]"
+          />
           <CategoryFilterDropdown
             budgieId={budgieId}
             value={selectedCategoryId}
