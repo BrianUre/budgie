@@ -16,7 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { CreditCard } from "lucide-react";
+import { CreditCard, ListFilter } from "lucide-react";
 import { PaymentStatusSection } from "@/components/payment-status-section";
 import { CategoryFilterDropdown } from "@/components/category-filter-dropdown";
 import { DestinationFilterDropdown, DESTINATION_NONE } from "@/components/destination-filter-dropdown";
@@ -169,26 +169,6 @@ export function PaymentsPanel({
         <h3 className="text-base sm:text-2xl font-zain font-medium">
           Payments
         </h3>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <ContributorFilterDropdown
-            contributors={contributors}
-            value={selectedContributorId}
-            onValueChange={setSelectedContributorId}
-            className="h-9 min-w-[12rem]"
-          />
-          <DestinationFilterDropdown
-            destinations={destinations}
-            value={selectedDestinationId}
-            onValueChange={setSelectedDestinationId}
-            className="h-9 min-w-[12rem]"
-          />
-          <CategoryFilterDropdown
-            budgieId={budgieId}
-            value={selectedCategoryId}
-            onValueChange={setSelectedCategoryId}
-            className="h-9 min-w-[12rem]"
-          />
-        </div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -255,6 +235,34 @@ export function PaymentsPanel({
             )}
           </CardContent>
         </Card>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <ListFilter className="h-6 w-6 text-tertiary" />
+            <h3 className="text-base sm:text-2xl font-zain font-medium">Filters</h3>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <ContributorFilterDropdown
+              contributors={contributors}
+              value={selectedContributorId}
+              onValueChange={setSelectedContributorId}
+              className="h-9 min-w-[12rem]"
+              />
+            <DestinationFilterDropdown
+              destinations={destinations}
+              value={selectedDestinationId}
+              onValueChange={setSelectedDestinationId}
+              className="h-9 min-w-[12rem]"
+              />
+            <CategoryFilterDropdown
+              budgieId={budgieId}
+              value={selectedCategoryId}
+              onValueChange={setSelectedCategoryId}
+              className="h-9 min-w-[12rem]"
+              />
+          </div>
+        </div>
 
         {/* One item per contributor: narrow vertical cards in a grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
