@@ -10,8 +10,8 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const NAV_ROUTES = [
-  { segment: "expenses", label: "Expenses" },
   { segment: "payments", label: "Payments" },
+  { segment: "expenses", label: "Expenses" },
   { segment: "destinations", label: "Destinations" },
   { segment: "categories", label: "Categories" },
   { segment: "collaborators", label: "Contributors" },
@@ -23,7 +23,7 @@ export function Navbar() {
   const segments = useSelectedLayoutSegments();
   // segments = ["budgie", "<id>", "<segment>"] on budgie detail pages
   const budgieId = segments[0] === "budgie" && params.id ? (params.id as string) : null;
-  const currentSegment = segments[2] ?? "expenses";
+  const currentSegment = segments[2] ?? "payments";
   const basePath = budgieId ? `/budgie/${budgieId}` : null;
 
   const [sheetOpen, setSheetOpen] = useState(false);
