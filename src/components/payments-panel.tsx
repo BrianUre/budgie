@@ -131,6 +131,16 @@ export function PaymentsPanel({
     return outer;
   }, [contributors, filteredCosts]);
 
+  // When filtering by a contributor, only that contributor's card is shown so
+  // the section above the table matches the per-user amounts in the table.
+  const visibleContributors = useMemo(
+    () =>
+      selectedContributorId
+        ? contributors.filter((contributor) => contributor.id === selectedContributorId)
+        : contributors,
+    [contributors, selectedContributorId]
+  );
+
   const hasNoDestination = totalByDestination.has(null);
   const destinationRows = useMemo(() => {
     const rows: Array<{
@@ -248,7 +258,7 @@ export function PaymentsPanel({
 
         {/* One item per contributor: narrow vertical cards in a grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {contributors.map((contributor) => (
+          {visibleContributors.map((contributor) => (
             <Card
               key={contributor.id}
               className={cn(
