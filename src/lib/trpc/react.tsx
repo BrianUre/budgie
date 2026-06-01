@@ -13,7 +13,29 @@ function getBaseUrl() {
 }
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: (failureCount, error: unknown) => {
+              if (
+                typeof error === "object" &&
+                error !== null &&
+                "data" in error &&
+                typeof (error as { data?: { httpStatus?: number } }).data
+                  ?.httpStatus === "number" &&
+                (error as { data: { httpStatus: number } }).data.httpStatus <
+                  500
+              ) {
+                return false;
+              }
+              return failureCount < 3;
+            },
+          },
+        },
+      })
+  );
 
   const [trpcClient] = useState(() =>
     api.createClient({
