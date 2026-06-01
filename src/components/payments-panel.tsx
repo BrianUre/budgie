@@ -62,7 +62,14 @@ export function PaymentsPanel({
 }: PaymentsPanelProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
-  const [selectedContributorId, setSelectedContributorId] = useState<string | null>(null);
+  // Non-admins default to filtering by their own contributions; admins see all.
+  const [selectedContributorId, setSelectedContributorId] = useState<string | null>(
+    () =>
+      isAdmin || !currentUserId
+        ? null
+        : contributors.find((contributor) => contributor.userId === currentUserId)
+            ?.id ?? null
+  );
 
   const filteredCosts = useMemo(() => {
     return costs.filter((cost) => {
@@ -344,6 +351,7 @@ export function PaymentsPanel({
 
         <PaymentStatusSection
           costs={filteredCosts}
+          selectedContributorId={selectedContributorId}
           isAdmin={isAdmin}
           budgieId={budgieId}
           monthId={monthId}

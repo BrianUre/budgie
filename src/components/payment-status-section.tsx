@@ -35,6 +35,7 @@ import type { CostListForMonthItem } from "@/server/api/routers/cost";
 interface PaymentStatusSectionProps {
   /** Costs for the selected month, used to render name, destination, amount, and status. */
   costs: CostListForMonthItem[];
+  selectedContributorId?: string | null;
   isAdmin: boolean;
   budgieId: string;
   monthId: string;
@@ -42,6 +43,7 @@ interface PaymentStatusSectionProps {
 
 export function PaymentStatusSection({
   costs,
+  selectedContributorId,
   isAdmin,
   budgieId,
   monthId,
@@ -77,9 +79,10 @@ export function PaymentStatusSection({
         columnHelper,
         isAdmin,
         budgieId,
+        selectedContributorId,
         updateStatusMutation,
       }),
-    [columnHelper, isAdmin, budgieId, updateStatusMutation]
+    [columnHelper, isAdmin, budgieId, selectedContributorId, updateStatusMutation]
   );
 
   const table = useReactTable({

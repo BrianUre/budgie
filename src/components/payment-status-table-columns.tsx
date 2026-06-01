@@ -18,10 +18,31 @@ export type PaymentStatusColumnsDependencies = {
   columnHelper: ReturnType<typeof createColumnHelper<PaymentStatusRow>>;
   isAdmin: boolean;
   budgieId: string;
+  /**
+   * When set, the amount column shows this contributor's share of each cost
+   * instead of the cost's total amount.
+   */
+  selectedContributorId?: string | null;
   updateStatusMutation: ReturnType<
     typeof api.cost.updatePaymentStatus.useMutation
   >;
 };
+
+/**
+ * The amount to display for a cost row. When a contributor is selected, this is
+ * that contributor's contribution to the cost; otherwise it is the cost total.
+ */
+function resolveDisplayAmount(
+  row: PaymentStatusRow,
+  selectedContributorId?: string | null
+): number {
+  if (!selectedContributorId) return row.amount;
+  return (
+    row.contributions?.find(
+      (contribution) => contribution.contributorId === selectedContributorId
+    )?.amount ?? 0
+  );
+}
 
 const STATUS_WORKFLOW_ORDER: Record<PaymentStatusType, number> = {
   pending: 0,
@@ -89,8 +110,13 @@ function SortableHeader({
 export function buildPaymentStatusColumns(
   dependencies: PaymentStatusColumnsDependencies
 ): ColumnDef<PaymentStatusRow, unknown>[] {
-  const { columnHelper, isAdmin, budgieId, updateStatusMutation } =
-    dependencies;
+  const {
+    columnHelper,
+    isAdmin,
+    budgieId,
+    selectedContributorId,
+    updateStatusMutation,
+  } = dependencies;
 
   const nameColumn = columnHelper.accessor((row) => row.expense?.name ?? "", {
     id: "name",
@@ -128,21 +154,26 @@ export function buildPaymentStatusColumns(
     }
   );
 
-  const amountColumn = columnHelper.accessor((row) => row.amount, {
-    id: "amount",
-    sortingFn: "basic",
-    header: ({ column }) => (
-      <SortableHeader
-        label="Amount"
-        isSorted={column.getIsSorted()}
-        onClick={() => column.toggleSorting()}
-        align="right"
-      />
-    ),
-    cell: ({ row }) => (
-      <span className="font-zain text-lg">{formatMoney(row.original.amount)}</span>
-    ),
-  });
+  const amountColumn = columnHelper.accessor(
+    (row) => resolveDisplayAmount(row, selectedContributorId),
+    {
+      id: "amount",
+      sortingFn: "basic",
+      header: ({ column }) => (
+        <SortableHeader
+          label="Amount"
+          isSorted={column.getIsSorted()}
+          onClick={() => column.toggleSorting()}
+          align="right"
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="font-zain text-lg">
+          {formatMoney(resolveDisplayAmount(row.original, selectedContributorId))}
+        </span>
+      ),
+    }
+  );
 
   const statusColumn = columnHelper.accessor(
     (row) =>
