@@ -81,6 +81,7 @@ export function DashboardClient() {
                 contributorCount={budgie.contributorCount}
                 hasCurrentMonth={budgie.hasCurrentMonth}
                 isAdmin={budgie.isAdmin}
+                currency={budgie.currency}
                 currentMonthExpenseTotal={budgie.currentMonthExpenseTotal}
                 currentMonthPaidPercent={budgie.currentMonthPaidPercent}
               />
@@ -122,6 +123,7 @@ function BudgieCard({
   contributorCount,
   hasCurrentMonth,
   isAdmin,
+  currency,
   currentMonthExpenseTotal,
   currentMonthPaidPercent,
 }: {
@@ -130,6 +132,7 @@ function BudgieCard({
   contributorCount: number;
   hasCurrentMonth: boolean;
   isAdmin: boolean;
+  currency: string;
   currentMonthExpenseTotal: number;
   currentMonthPaidPercent: number;
 }) {
@@ -150,7 +153,7 @@ function BudgieCard({
           {hasCurrentMonth ? (
             <>
               <span className="tabular-nums">
-                {formatMoney(currentMonthExpenseTotal)}
+                {formatMoney(currentMonthExpenseTotal, currency)}
               </span>
               <span className="tabular-nums">{currentMonthPaidPercent}%</span>
             </>

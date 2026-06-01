@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/utils";
+import { useBudgieDetail } from "@/app/budgie/[id]/budgie-detail-context";
 
 export function CostAmountEdit({
   value,
@@ -13,6 +14,7 @@ export function CostAmountEdit({
   onSave: (v: number) => Promise<unknown>;
   isPending: boolean;
 }) {
+  const { currency } = useBudgieDetail();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(value));
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,7 +58,7 @@ export function CostAmountEdit({
           setEditing(true);
         }}
       >
-        {formatMoney(value)}
+        {formatMoney(value, currency)}
       </button>
     </div>
   );

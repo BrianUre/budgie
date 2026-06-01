@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { api } from "@/lib/trpc/client";
 import { PaymentsPanel } from "@/components/payments-panel";
-import { useBudgieDetail } from "../budgie-detail-context";
+import { useBudgieDetail } from "../../budgie-detail-context";
 
 export default function PaymentsTabPage() {
   const {

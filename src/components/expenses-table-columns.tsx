@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { createColumnHelper } from "@tanstack/react-table";
 import type { CostListForMonth } from "@/server/api/routers/cost";
 import { formatMoney } from "@/lib/utils";
+import type { Currency } from "@/types/currency";
 import { CostAmountEdit } from "@/components/cost-amount-edit";
 import { CostContributionCell } from "@/components/cost-contribution-cell";
 import { ContributorColumnHeader } from "@/components/contributor-column-header";
@@ -36,6 +37,7 @@ export type ExpensesTableColumnsDeps = {
   selectedMonthId: string;
   currentUserId: string | null;
   contributors: ExpensesTableContributor[];
+  currency: Currency;
 };
 
 export function buildExpensesTableColumns(
@@ -49,6 +51,7 @@ export function buildExpensesTableColumns(
     selectedMonthId,
     currentUserId,
     contributors,
+    currency,
   } = deps;
 
   const expenseCol = columnHelper.accessor(
@@ -102,13 +105,13 @@ export function buildExpensesTableColumns(
               isPending={meta.costMutation.isPending}
             />
           ) : (
-            <div className="text-right text-2xl font-zain">{formatMoney(amount)}</div>
+            <div className="text-right text-2xl font-zain">{formatMoney(amount, currency)}</div>
           )}
           {showDiff && (
             <span
               className={`absolute -bottom-4 right-0 text-xs font-mono ${diff > 0 ? "text-red-500" : "text-green-500"}`}
             >
-              {diff > 0 ? `-${formatMoney(diff)}` : `+${formatMoney(Math.abs(diff))}`}
+              {diff > 0 ? `-${formatMoney(diff, currency)}` : `+${formatMoney(Math.abs(diff), currency)}`}
             </span>
           )}
         </div>

@@ -24,6 +24,7 @@ import { ContributorFilterDropdown } from "@/components/contributor-filter-dropd
 import type { CostListForMonthItem } from "@/server/api/routers/cost";
 import type { ContributorListItem } from "@/server/api/routers/contributor";
 import type { DestinationListItem } from "@/server/api/routers/destination";
+import { useBudgieDetail } from "@/app/budgie/[id]/budgie-detail-context";
 
 interface PaymentsPanelProps {
   contributors: ContributorListItem[];
@@ -60,6 +61,7 @@ export function PaymentsPanel({
   isAdmin,
   className,
 }: PaymentsPanelProps) {
+  const { currency } = useBudgieDetail();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
   // Non-admins default to filtering by their own contributions; admins see all.
@@ -179,7 +181,7 @@ export function PaymentsPanel({
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xl font-semibold">
-              {formatMoney(totalCostAmount)}
+              {formatMoney(totalCostAmount, currency)}
             </p>
             {destinationRows.length > 0 && (
               <ul className="space-y-1.5 border-t pt-3 text-sm">
@@ -214,7 +216,7 @@ export function PaymentsPanel({
                         <span className="text-muted-foreground">{name}</span>
                       )}
                       <span className="text-lg font-zain">
-                        {formatMoney(totalByDestination.get(id) ?? 0)}
+                        {formatMoney(totalByDestination.get(id) ?? 0, currency)}
                       </span>
                     </li>
                   ))}
@@ -226,7 +228,7 @@ export function PaymentsPanel({
                     <li className="flex justify-between gap-2 text-red-500">
                       <span>No destination</span>
                       <span className="text-lg font-zain">
-                        {formatMoney(totalByDestination.get(null) ?? 0)}
+                        {formatMoney(totalByDestination.get(null) ?? 0, currency)}
                       </span>
                     </li>
                   </>
@@ -298,7 +300,7 @@ export function PaymentsPanel({
               </CardHeader>
               <CardContent className="space-y-3 flex-1">
                 <p className="text-xl font-semibold text-center">
-                  {formatMoney(totalByContributor.get(contributor.id) ?? 0)}
+                  {formatMoney(totalByContributor.get(contributor.id) ?? 0, currency)}
                 </p>
                 {destinationRows.length > 0 && (
                   <ul className="space-y-1.5 border-t pt-3 text-sm">
@@ -338,7 +340,8 @@ export function PaymentsPanel({
                             {formatMoney(
                               totalByContributorByDestination
                                 .get(contributor.id)
-                                ?.get(id) ?? 0
+                                ?.get(id) ?? 0,
+                              currency
                             )}
                           </span>
                         </li>
@@ -354,7 +357,8 @@ export function PaymentsPanel({
                             {formatMoney(
                               totalByContributorByDestination
                                 .get(contributor.id)
-                                ?.get(null) ?? 0
+                                ?.get(null) ?? 0,
+                              currency
                             )}
                           </span>
                         </li>

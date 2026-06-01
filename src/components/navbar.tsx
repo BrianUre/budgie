@@ -15,6 +15,7 @@ const NAV_ROUTES = [
   { segment: "destinations", label: "Destinations" },
   { segment: "categories", label: "Categories" },
   { segment: "collaborators", label: "Contributors" },
+  { segment: "settings", label: "Settings" },
 ] as const;
 
 /** App-wide navigation bar. Displays the Budgie logo linking to the home page. */

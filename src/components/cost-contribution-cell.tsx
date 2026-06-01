@@ -5,6 +5,7 @@ import { api } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
 import { cn, formatMoney } from "@/lib/utils";
 import { useOptimisticCostListUpdate } from "@/hooks/use-optimistic-cost-list-update";
+import { useBudgieDetail } from "@/app/budgie/[id]/budgie-detail-context";
 import type { CostRow } from "@/components/expenses-table-columns";
 
 export function CostContributionCell({
@@ -24,6 +25,7 @@ export function CostContributionCell({
   budgieId: string;
   isCurrentUser?: boolean;
 }) {
+  const { currency } = useBudgieDetail();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("0");
   const optimistic = useOptimisticCostListUpdate({ monthId, budgieId });
@@ -135,7 +137,7 @@ export function CostContributionCell({
       )}
       onClick={handleEnterEdit}
     >
-      {formatMoney(amount)}
+      {formatMoney(amount, currency)}
     </button>
   ) : (
     <span
@@ -144,7 +146,7 @@ export function CostContributionCell({
         isCurrentUser && "text-primary font-semibold"
       )}
     >
-      {formatMoney(amount)}
+      {formatMoney(amount, currency)}
     </span>
   );
 }

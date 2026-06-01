@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/trpc/client";
 import { ExpensesView } from "@/components/expenses-view";
-import { useBudgieDetail } from "../budgie-detail-context";
+import { useBudgieDetail } from "../../budgie-detail-context";
 
 export default function ExpensesTabPage() {
   const {

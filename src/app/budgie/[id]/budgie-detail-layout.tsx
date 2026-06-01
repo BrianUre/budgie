@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
@@ -8,12 +8,11 @@ import { RedirectToSignIn } from "@clerk/nextjs";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { MonthSelector } from "@/components/month-selector";
-import { Separator } from "@/components/ui/separator";
 import {
   BudgieDetailProvider,
   type BudgieDetailContextValue,
 } from "./budgie-detail-context";
+import type { Currency } from "@/types/currency";
 
 export function BudgieDetailLayout({
   children,
@@ -21,7 +20,6 @@ export function BudgieDetailLayout({
   children: React.ReactNode;
 }) {
   const params = useParams();
-  const pathname = usePathname();
   const { isSignedIn, isLoaded, userId } = useAuth();
   const id = params.id as string;
 
@@ -96,6 +94,7 @@ export function BudgieDetailLayout({
   const contextValue: BudgieDetailContextValue = {
     budgieId: id,
     budgie: { name: budgie.name },
+    currency: budgie.currency as Currency,
     isAdmin,
     contributors,
     contributorsWithSessionFirst,
@@ -123,14 +122,6 @@ export function BudgieDetailLayout({
               {budgie.name}
             </h1>
           </div>
-
-          <MonthSelector
-            budgieId={id}
-            selectedMonthId={selectedMonthId}
-            onSelectMonth={setSelectedMonthId}
-            isAdmin={isAdmin}
-          />
-          <Separator />
 
           {children}
         </div>

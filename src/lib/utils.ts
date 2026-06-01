@@ -12,9 +12,9 @@ export function formatMonth(date: Date) {
   return `${monthName} ${date.getFullYear()}`;
 }
 
-export function formatMoney(amount: number) {
+export function formatMoney(amount: number, currency = "USD") {
   return new Intl.NumberFormat(undefined, {
     style: "currency",
-    currency: "USD",
+    currency,
   }).format(amount);
 }

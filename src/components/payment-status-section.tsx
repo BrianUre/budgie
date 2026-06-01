@@ -31,6 +31,7 @@ import {
   type PaymentStatusRow,
 } from "@/components/payment-status-table-columns";
 import type { CostListForMonthItem } from "@/server/api/routers/cost";
+import { useBudgieDetail } from "@/app/budgie/[id]/budgie-detail-context";
 
 interface PaymentStatusSectionProps {
   /** Costs for the selected month, used to render name, destination, amount, and status. */
@@ -48,6 +49,7 @@ export function PaymentStatusSection({
   budgieId,
   monthId,
 }: PaymentStatusSectionProps) {
+  const { currency } = useBudgieDetail();
   const optimistic = useOptimisticCostListUpdate({ monthId, budgieId });
   const updateStatusMutation = api.cost.updatePaymentStatus.useMutation({
     onMutate: (input) =>
@@ -81,8 +83,9 @@ export function PaymentStatusSection({
         budgieId,
         selectedContributorId,
         updateStatusMutation,
+        currency,
       }),
-    [columnHelper, isAdmin, budgieId, selectedContributorId, updateStatusMutation]
+    [columnHelper, isAdmin, budgieId, selectedContributorId, updateStatusMutation, currency]
   );
 
   const table = useReactTable({

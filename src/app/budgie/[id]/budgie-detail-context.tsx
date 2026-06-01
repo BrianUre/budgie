@@ -4,6 +4,7 @@ import { createContext, useContext } from "react";
 import type { CategoryListItem } from "@/server/api/routers/category";
 import type { ContributorListItem } from "@/server/api/routers/contributor";
 import type { DestinationListItem } from "@/server/api/routers/destination";
+import type { Currency } from "@/types/currency";
 
 export type Destination = DestinationListItem;
 export type Category = CategoryListItem;
@@ -11,6 +12,7 @@ export type Category = CategoryListItem;
 export type BudgieDetailContextValue = {
   budgieId: string;
   budgie: { name: string };
+  currency: Currency;
   isAdmin: boolean;
   contributors: ContributorListItem[];
   contributorsWithSessionFirst: ContributorListItem[];

@@ -5,6 +5,7 @@ import type { createColumnHelper } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 import type { CostListForMonthItem } from "@/server/api/routers/cost";
 import { formatMoney, cn } from "@/lib/utils";
+import type { Currency } from "@/types/currency";
 import { PaymentStatusSelector } from "@/components/payment-status-selector";
 import {
   DEFAULT_PAYMENT_STATUS,
@@ -26,6 +27,7 @@ export type PaymentStatusColumnsDependencies = {
   updateStatusMutation: ReturnType<
     typeof api.cost.updatePaymentStatus.useMutation
   >;
+  currency: Currency;
 };
 
 /**
@@ -116,6 +118,7 @@ export function buildPaymentStatusColumns(
     budgieId,
     selectedContributorId,
     updateStatusMutation,
+    currency,
   } = dependencies;
 
   const nameColumn = columnHelper.accessor((row) => row.expense?.name ?? "", {
@@ -169,7 +172,7 @@ export function buildPaymentStatusColumns(
       ),
       cell: ({ row }) => (
         <span className="font-zain text-lg">
-          {formatMoney(resolveDisplayAmount(row.original, selectedContributorId))}
+          {formatMoney(resolveDisplayAmount(row.original, selectedContributorId), currency)}
         </span>
       ),
     }

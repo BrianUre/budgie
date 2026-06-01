@@ -28,6 +28,8 @@ import {
   type ExpensesTableContributor,
 } from "@/components/expenses-table-columns";
 import type { CostListForMonth } from "@/server/api/routers/cost";
+import { useBudgieDetail } from "@/app/budgie/[id]/budgie-detail-context";
+import type { Currency } from "@/types/currency";
 
 export type ExpensesTableMeta = {
   costMutation: ReturnType<typeof api.cost.updateAmount.useMutation>;
@@ -47,12 +49,14 @@ function ExpensesTableFooter({
   contributorTotals,
   contributors,
   currentUserId,
+  currency,
 }: {
   headers: { id: string }[];
   totalCost: number;
   contributorTotals: Record<string, number>;
   contributors: ExpensesTableContributor[];
   currentUserId: string | null;
+  currency: Currency;
 }) {
   return (
     <TableRow>
@@ -79,7 +83,7 @@ function ExpensesTableFooter({
               key={header.id}
               className="font-mono text-3xl text-right text-tertiary font-bold"
             >
-              {formatMoney(totalCost)}
+              {formatMoney(totalCost, currency)}
             </TableCell>
           );
         }
@@ -91,7 +95,7 @@ function ExpensesTableFooter({
               isCurrentUserCol && "bg-primary/5 text-primary font-bold "
             )}
           >
-            {formatMoney(contributorTotals[colId] ?? 0)}
+            {formatMoney(contributorTotals[colId] ?? 0, currency)}
           </TableCell>
         );
       })}
@@ -114,6 +118,7 @@ export function ExpensesTable({
   selectedMonthId: string;
   currentUserId?: string | null;
 }) {
+  const { currency } = useBudgieDetail();
   const isMobile = useIsMobile();
   const [extraColumnIndex, setExtraColumnIndex] = useState(0);
 
@@ -142,6 +147,7 @@ export function ExpensesTable({
         selectedMonthId,
         currentUserId: currentUserId ?? null,
         contributors,
+        currency,
       }),
     [
       contributors,
@@ -150,6 +156,7 @@ export function ExpensesTable({
       selectedMonthId,
       currentUserId,
       costMutation,
+      currency,
     ]
   );
 
@@ -269,6 +276,7 @@ export function ExpensesTable({
               contributorTotals={contributorTotals}
               contributors={contributors}
               currentUserId={currentUserId ?? null}
+              currency={currency}
             />
           </TableFooter>
         )}

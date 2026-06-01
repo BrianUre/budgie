@@ -17,6 +17,7 @@ export class BudgieService {
       select: {
         id: true,
         name: true,
+        currency: true,
         _count: { select: { contributors: true } },
         contributors: {
           where: { userId },
@@ -50,6 +51,7 @@ export class BudgieService {
       return {
         id: b.id,
         name: b.name,
+        currency: b.currency,
         contributorCount: b._count.contributors,
         hasCurrentMonth: b.months.length > 0,
         isAdmin,
@@ -95,6 +97,13 @@ export class BudgieService {
   async getById(id: string) {
     return this.db.budgie.findUnique({
       where: { id },
+    });
+  }
+
+  async update(id: string, data: { currency?: string }) {
+    return this.db.budgie.update({
+      where: { id },
+      data,
     });
   }
 }
