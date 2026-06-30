@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { api } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +18,7 @@ import {
 } from "@/components/expense-activity-list";
 import { Plus } from "lucide-react";
 
-type DraftOverride = { isActive: boolean; amount: number };
+type UserOverride = { isActive: boolean; amount: number };
 
 interface CreateNextMonthDialogProps {
   budgieId: string;
@@ -46,31 +46,10 @@ export function CreateNextMonthDialog({
     { enabled: !!latestMonthId && !!budgieId }
   );
 
-  const [draftOverrides, setDraftOverrides] = useState<
-    Record<string, DraftOverride>
+  const [userOverrides, setUserOverrides] = useState<
+    Record<string, UserOverride>
   >({});
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (expenses.length === 0) return;
-    setDraftOverrides((previous) => {
-      const next = { ...previous };
-      for (const expense of expenses) {
-        if (next[expense.id] === undefined) {
-          const cost = costsForLatestMonth.find(
-            (costRow) => costRow.expenseId === expense.id
-          );
-          next[expense.id] = cost
-            ? {
-                isActive: cost.isActive,
-                amount: Number(cost.amount),
-              }
-            : { isActive: true, amount: 0 };
-        }
-      }
-      return next;
-    });
-  }, [expenses, costsForLatestMonth]);
 
   const createNextMutation = api.month.createNext.useMutation({
     onSuccess: (newMonth) => {
@@ -85,50 +64,55 @@ export function CreateNextMonthDialog({
       const cost = costsForLatestMonth.find(
         (costRow) => costRow.expenseId === expense.id
       );
+      const override = userOverrides[expense.id];
       return {
         expenseId: expense.id,
         expenseName: expense.name,
         costId: cost?.id ?? null,
-        isActive: draftOverrides[expense.id]?.isActive ?? true,
-        amount: draftOverrides[expense.id]?.amount ?? 0,
+        isActive: override?.isActive ?? cost?.isActive ?? true,
+        amount: override?.amount ?? (cost ? Number(cost.amount) : 0),
         destinationId: cost?.destination?.id ?? null,
         categoryIds: cost?.costCategories?.map((cc) => cc.categoryId) ?? [],
       };
     });
-  }, [expenses, draftOverrides]);
+  }, [expenses, costsForLatestMonth, userOverrides]);
 
   const handleActiveChange = (
     expenseId: string,
     _costId: string | null,
     isActive: boolean
   ) => {
-    setDraftOverrides((previous) => ({
+    setUserOverrides((previous) => ({
       ...previous,
       [expenseId]: {
-        ...previous[expenseId],
         isActive,
-        amount: previous[expenseId]?.amount ?? 0,
+        amount: previous[expenseId]?.amount ?? activityItems.find((item) => item.expenseId === expenseId)?.amount ?? 0,
       },
     }));
   };
 
   const handleAmountChange = (expenseId: string, amount: number) => {
-    setDraftOverrides((previous) => ({
+    setUserOverrides((previous) => ({
       ...previous,
       [expenseId]: {
-        isActive: previous[expenseId]?.isActive ?? true,
+        isActive: previous[expenseId]?.isActive ?? activityItems.find((i) => i.expenseId === expenseId)?.isActive ?? true,
         amount,
       },
     }));
   };
 
   const handleSubmit = () => {
-    const costOverrides = expenses.map((expense) => ({
-      expenseId: expense.id,
-      isActive: draftOverrides[expense.id]?.isActive ?? true,
-      amount: draftOverrides[expense.id]?.amount ?? 0,
+    const costOverrides = activityItems.map((item) => ({
+      expenseId: item.expenseId,
+      isActive: item.isActive,
+      amount: item.amount,
     }));
     createNextMutation.mutate({ budgieId, costOverrides });
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) setUserOverrides({});
+    setOpen(nextOpen);
   };
 
   const defaultTrigger = (
@@ -139,7 +123,7 @@ export function CreateNextMonthDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
       <DialogContent className="max-h-[90vh] flex flex-col">
         <DialogHeader>
