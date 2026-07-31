@@ -15,10 +15,11 @@ export default function PaymentsTabPage() {
     userId,
   } = useBudgieDetail();
 
-  const { data: costsForMonth = [] } = api.cost.listForMonth.useQuery(
-    { monthId: selectedMonthId!, budgieId },
-    { enabled: !!selectedMonthId }
-  );
+  const { data: costsForMonth = [], isLoading: isLoadingCosts } =
+    api.cost.listForMonth.useQuery(
+      { monthId: selectedMonthId!, budgieId },
+      { enabled: !!selectedMonthId }
+    );
 
   const activeCosts = useMemo(
     () => costsForMonth.filter((cost) => cost.isActive),
@@ -38,6 +39,7 @@ export default function PaymentsTabPage() {
       budgieId={budgieId}
       monthId={selectedMonthId!}
       isAdmin={isAdmin}
+      isLoading={isLoadingCosts}
     />
   );
 }

@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/trpc/client";
 import { useOptimisticCostListUpdate } from "@/hooks/use-optimistic-cost-list-update";
@@ -40,6 +41,64 @@ interface PaymentStatusSectionProps {
   isAdmin: boolean;
   budgieId: string;
   monthId: string;
+  /** True while costs are being fetched; the table body renders skeleton rows. */
+  isLoading?: boolean;
+}
+
+// Varied widths keep the placeholder rows looking like real data instead of
+// uniform bars. Deterministic so server and client render identically.
+const SKELETON_ROWS = [
+  { name: "w-36", destination: "w-24", amount: "w-16" },
+  { name: "w-24", destination: "w-28", amount: "w-12" },
+  { name: "w-44", destination: "w-20", amount: "w-14" },
+  { name: "w-28", destination: "w-24", amount: "w-16" },
+] as const;
+
+function PaymentStatusSkeletonRows() {
+  return (
+    <>
+      {SKELETON_ROWS.map((widths, index) => (
+        <TableRow key={index} className="hover:bg-transparent">
+          <TableCell>
+            <Skeleton
+              className={cn(
+                "h-5 motion-reduce:animate-none",
+                widths.name
+              )}
+            />
+          </TableCell>
+          <TableCell>
+            <Skeleton
+              className={cn(
+                "h-5 motion-reduce:animate-none",
+                widths.destination
+              )}
+            />
+          </TableCell>
+          <TableCell>
+            <Skeleton
+              className={cn(
+                "ml-auto h-5 motion-reduce:animate-none",
+                widths.amount
+              )}
+            />
+          </TableCell>
+          {/* Matches the h-10 status selector so row height is identical once data lands. */}
+          <TableCell>
+            <div className="flex h-10 items-center justify-end gap-1">
+              <Skeleton className="h-6 w-16 rounded-full motion-reduce:animate-none" />
+              <Skeleton className="h-6 w-10 rounded-full motion-reduce:animate-none" />
+              <Skeleton className="h-6 w-10 rounded-full motion-reduce:animate-none" />
+              <Skeleton className="h-6 w-16 rounded-full motion-reduce:animate-none" />
+              <div className="flex w-12 justify-end">
+                <Skeleton className="h-6 w-6 rounded-full motion-reduce:animate-none" />
+              </div>
+            </div>
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
 }
 
 export function PaymentStatusSection({
@@ -48,6 +107,7 @@ export function PaymentStatusSection({
   isAdmin,
   budgieId,
   monthId,
+  isLoading = false,
 }: PaymentStatusSectionProps) {
   const { currency } = useBudgieDetail();
   const optimistic = useOptimisticCostListUpdate({ monthId, budgieId });
@@ -143,7 +203,8 @@ export function PaymentStatusSection({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.map((row) => (
+            {isLoading && <PaymentStatusSkeletonRows />}
+            {!isLoading && table.getRowModel().rows.map((row) => (
               <TableRow key={row.id} className="transition-colors">
                 {row.getVisibleCells().map((cell) => {
                   const align = columnAlign[cell.column.id] ?? "left";

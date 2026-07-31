@@ -14,6 +14,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CreditCard, ListFilter } from "lucide-react";
@@ -34,6 +35,8 @@ interface PaymentsPanelProps {
   budgieId: string;
   monthId: string;
   isAdmin: boolean;
+  /** True while the month's costs are being fetched; amounts render as skeletons. */
+  isLoading?: boolean;
   className?: string;
 }
 
@@ -59,6 +62,7 @@ export function PaymentsPanel({
   budgieId,
   monthId,
   isAdmin,
+  isLoading = false,
   className,
 }: PaymentsPanelProps) {
   const { currency } = useBudgieDetail();
@@ -180,9 +184,13 @@ export function PaymentsPanel({
             <CardTitle className="text-base">Total</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-xl font-semibold">
-              {formatMoney(totalCostAmount, currency)}
-            </p>
+            {isLoading ? (
+              <Skeleton className="my-0.5 h-6 w-28 motion-reduce:animate-none" />
+            ) : (
+              <p className="text-xl font-semibold">
+                {formatMoney(totalCostAmount, currency)}
+              </p>
+            )}
             {destinationRows.length > 0 && (
               <ul className="space-y-1.5 border-t pt-3 text-sm">
                 {destinationRows
@@ -215,9 +223,13 @@ export function PaymentsPanel({
                       ) : (
                         <span className="text-muted-foreground">{name}</span>
                       )}
-                      <span className="text-lg font-zain">
-                        {formatMoney(totalByDestination.get(id) ?? 0, currency)}
-                      </span>
+                      {isLoading ? (
+                        <Skeleton className="my-1 h-5 w-14 shrink-0 motion-reduce:animate-none" />
+                      ) : (
+                        <span className="text-lg font-zain">
+                          {formatMoney(totalByDestination.get(id) ?? 0, currency)}
+                        </span>
+                      )}
                     </li>
                   ))}
                 {hasNoDestination && (
@@ -299,9 +311,13 @@ export function PaymentsPanel({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 flex-1">
-                <p className="text-xl font-semibold text-center">
-                  {formatMoney(totalByContributor.get(contributor.id) ?? 0, currency)}
-                </p>
+                {isLoading ? (
+                  <Skeleton className="mx-auto my-0.5 h-6 w-24 motion-reduce:animate-none" />
+                ) : (
+                  <p className="text-xl font-semibold text-center">
+                    {formatMoney(totalByContributor.get(contributor.id) ?? 0, currency)}
+                  </p>
+                )}
                 {destinationRows.length > 0 && (
                   <ul className="space-y-1.5 border-t pt-3 text-sm">
                     {destinationRows
@@ -336,14 +352,18 @@ export function PaymentsPanel({
                               {name}
                             </span>
                           )}
-                          <span className="shrink-0 text-lg font-zain">
-                            {formatMoney(
-                              totalByContributorByDestination
-                                .get(contributor.id)
-                                ?.get(id) ?? 0,
-                              currency
-                            )}
-                          </span>
+                          {isLoading ? (
+                            <Skeleton className="my-1 h-5 w-12 shrink-0 motion-reduce:animate-none" />
+                          ) : (
+                            <span className="shrink-0 text-lg font-zain">
+                              {formatMoney(
+                                totalByContributorByDestination
+                                  .get(contributor.id)
+                                  ?.get(id) ?? 0,
+                                currency
+                              )}
+                            </span>
+                          )}
                         </li>
                       ))}
                     {hasNoDestination && (
@@ -377,6 +397,7 @@ export function PaymentsPanel({
           isAdmin={isAdmin}
           budgieId={budgieId}
           monthId={monthId}
+          isLoading={isLoading}
         />
       </div>
     </div>
