@@ -1,6 +1,6 @@
 # Backend Unit Testing Guide
 
-This document defines the required conventions for unit tests in all NestJS backends in this ecosystem. Unit tests cover controllers and services in isolation — all dependencies are mocked.
+This document defines the required conventions for unit tests in NestJS backends. Unit tests cover controllers and services in isolation — all dependencies are mocked.
 
 ---
 
@@ -29,7 +29,7 @@ expect(response.status).toBe(200);
 expect(response.data).toMatchObject({
   id: expect.any(String),
   is_banned: expect.any(Boolean),
-  canva_uid: expect.any(String),
+  provider_uid: expect.any(String),
 });
 ```
 
@@ -71,25 +71,24 @@ The fixtures file exports factory functions and mock builder helpers. It must no
 
 - Factory functions that generate mock entities (User, Subscription, etc.)
 - Factory functions that generate mock service objects (pre-wired with `jest.fn()`)
-- Shared constants for Canva/Clerk user payloads
+- Shared constants for auth provider payloads
 - Guard override factories
 
 ### Example: `users.controller.fixtures.ts`
 
 ```typescript
 import { ExecutionContext } from "@nestjs/common";
-import { CanvaUser } from "./guards/canva-jwt.guard";
+import { AuthUser } from "./guards/jwt-auth.guard";
 
 // --- Entities ---
 
 export function mockUser(overrides: Partial<ReturnType<typeof mockUser>> = {}) {
   return {
     id: "mock-user-id",
-    canva_uid: "mock-canva-uid",
+    provider_uid: "mock-provider-uid",
     name: null,
     email: null,
     stripe_customer_id: null,
-    datev_number: null,
     subscription_tier_id: "mock-subscription-id",
     is_banned: false,
     subscription_granted_by_admin: false,
@@ -121,24 +120,23 @@ export function mockSubscription(overrides = {}) {
 
 // --- Auth payloads ---
 
-export const canvaUserPayload: CanvaUser = {
-  appId: "mock-app-id",
-  userId: "mock-canva-uid",
-  brandId: "mock-brand-id",
+export const authUserPayload: AuthUser = {
+  userId: "mock-provider-uid",
+  orgId: "mock-org-id",
 };
 
 // --- Guard overrides ---
 
-export function canvaGuardAllow() {
+export function jwtGuardAllow() {
   return {
     canActivate: jest.fn((ctx: ExecutionContext) => {
-      ctx.switchToHttp().getRequest().canva = canvaUserPayload;
+      ctx.switchToHttp().getRequest().user = authUserPayload;
       return true;
     }),
   };
 }
 
-export function canvaGuardDeny() {
+export function jwtGuardDeny() {
   return {
     canActivate: jest.fn(() => {
       throw new UnauthorizedException();
@@ -150,9 +148,9 @@ export function canvaGuardDeny() {
 
 export function mockUsersService() {
   return {
-    upsertByCanvaUid: jest.fn(),
+    upsertByProviderUid: jest.fn(),
     findOneWithSubscriptions: jest.fn(),
-    findByCanvaUid: jest.fn(),
+    findByProviderUid: jest.fn(),
     findAll: jest.fn(),
     banUser: jest.fn(),
     unbanUser: jest.fn(),
@@ -177,22 +175,22 @@ import { Test } from "@nestjs/testing";
 import { HttpStatus } from "@nestjs/common";
 import { UsersController } from "./users.controller";
 import { UsersService } from "./users.service";
-import { CanvaJwtGuard } from "./guards/canva-jwt.guard";
+import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import {
   mockUser,
   mockUserWithSubscriptions,
   mockUsersService,
-  canvaUserPayload,
-  canvaGuardAllow,
-  canvaGuardDeny,
+  authUserPayload,
+  jwtGuardAllow,
+  jwtGuardDeny,
 } from "./users.controller.fixtures";
 
-async function buildModule(guardOverride = canvaGuardAllow()) {
+async function buildModule(guardOverride = jwtGuardAllow()) {
   const module = await Test.createTestingModule({
     controllers: [UsersController],
     providers: [{ provide: UsersService, useValue: mockUsersService() }],
   })
-    .overrideGuard(CanvaJwtGuard)
+    .overrideGuard(JwtAuthGuard)
     .useValue(guardOverride)
     .compile();
 
@@ -211,24 +209,24 @@ describe("UsersController", () => {
     it("returns the user on success", async () => {
       const { controller, service } = await buildModule();
       const user = mockUserWithSubscriptions();
-      service.upsertByCanvaUid.mockResolvedValue(mockUser());
+      service.upsertByProviderUid.mockResolvedValue(mockUser());
       service.findOneWithSubscriptions.mockResolvedValue(user);
 
-      const result = await controller.login(canvaUserPayload);
+      const result = await controller.login(authUserPayload);
 
       expect(result).toMatchObject({
         id: expect.any(String),
-        canva_uid: expect.any(String),
+        provider_uid: expect.any(String),
         is_banned: expect.any(Boolean),
         subscription_tier: expect.any(Object),
       });
-      expect(service.upsertByCanvaUid).toHaveBeenCalledWith(canvaUserPayload.userId);
+      expect(service.upsertByProviderUid).toHaveBeenCalledWith(authUserPayload.userId);
     });
 
     it("returns 401 when auth fails", async () => {
-      const { controller } = await buildModule(canvaGuardDeny());
+      const { controller } = await buildModule(jwtGuardDeny());
 
-      await expect(controller.login(canvaUserPayload)).rejects.toMatchObject({
+      await expect(controller.login(authUserPayload)).rejects.toMatchObject({
         status: HttpStatus.UNAUTHORIZED,
       });
     });
@@ -246,7 +244,7 @@ Override the guard to throw `UnauthorizedException` — the same exception the r
 // In fixtures file
 import { UnauthorizedException, ForbiddenException } from "@nestjs/common";
 
-export function canvaGuardDeny() {
+export function jwtGuardDeny() {
   return { canActivate: jest.fn(() => { throw new UnauthorizedException(); }) };
 }
 
@@ -266,7 +264,7 @@ At the unit level, test bad-request scenarios by mocking the service to throw a 
 ```typescript
 it("returns 404 when user does not exist", async () => {
   const { controller, service } = await buildModule();
-  service.findByCanvaUid.mockRejectedValue(new NotFoundException());
+  service.findByProviderUid.mockRejectedValue(new NotFoundException());
 
   await expect(controller.banUser("nonexistent-uid")).rejects.toMatchObject({
     status: HttpStatus.NOT_FOUND,
@@ -284,7 +282,7 @@ Use plain English, not code:
 
 ```typescript
 // Bad
-it("should call upsertByCanvaUid with userId and return result", ...);
+it("should call upsertByProviderUid with userId and return result", ...);
 
 // Good
 it("returns the user on success", ...);
