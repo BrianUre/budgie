@@ -11,15 +11,15 @@ type DashboardCostLike = {
 
 export function summarizeDashboardCosts(costs: DashboardCostLike[]) {
   let total = 0;
-  let paidCount = 0;
+  let settledCount = 0;
   for (const c of costs) {
     total += c.amount.toNumber();
     const status = c.paymentStatus?.status ?? DEFAULT_PAYMENT_STATUS;
-    if (status === "paid") paidCount += 1;
+    if (status === "paid" || status === "resolved") settledCount += 1;
   }
   const n = costs.length;
   return {
     currentMonthExpenseTotal: total,
-    currentMonthPaidPercent: n === 0 ? 0 : Math.ceil((paidCount / n) * 100),
+    currentMonthPaidPercent: n === 0 ? 0 : Math.ceil((settledCount / n) * 100),
   };
 }
