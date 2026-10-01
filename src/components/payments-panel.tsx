@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { contributorDisplayName } from "@/lib/contributor";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CreditCard, ListFilter } from "lucide-react";
@@ -38,10 +39,6 @@ interface PaymentsPanelProps {
   /** True while the month's costs are being fetched; amounts render as skeletons. */
   isLoading?: boolean;
   className?: string;
-}
-
-function contributorDisplayName(contributor: ContributorListItem): string {
-  return contributor.user?.name ?? contributor.user?.email ?? contributor.name ?? "—";
 }
 
 function contributorInitials(contributor: ContributorListItem): string {

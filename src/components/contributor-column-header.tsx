@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { contributorDisplayName } from "@/lib/contributor";
 import { cn } from "@/lib/utils";
 
 export type ContributorColumnHeaderContributor = {
@@ -14,12 +15,8 @@ export type ContributorColumnHeaderContributor = {
   } | null;
 };
 
-function displayName(c: ContributorColumnHeaderContributor): string {
-  return c.user?.name ?? c.user?.email ?? c.name ?? "—";
-}
-
 function initials(c: ContributorColumnHeaderContributor): string {
-  const name = displayName(c);
+  const name = contributorDisplayName(c);
   if (name === "—") return "?";
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) {
@@ -45,7 +42,7 @@ export function ContributorColumnHeader({
       )}
     >
       <span className="truncate text-sm font-medium">
-        {displayName(contributor)}
+        {contributorDisplayName(contributor)}
       </span>
       <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
         {contributor.user?.imageUrl ? (
