@@ -18,3 +18,13 @@ export function formatMoney(amount: number, currency = "USD") {
     currency,
   }).format(amount);
 }
+
+/** Short form for axis ticks, where a full currency string is too wide. */
+export function formatCompactMoney(amount: number, currency = "USD") {
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(amount);
+}
