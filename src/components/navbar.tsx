@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 const NAV_ROUTES = [
   { segment: "payments", label: "Payments" },
   { segment: "expenses", label: "Expenses" },
+  { segment: "statistics", label: "Statistics" },
   { segment: "destinations", label: "Destinations" },
   { segment: "categories", label: "Categories" },
   { segment: "collaborators", label: "Contributors" },
