@@ -8,6 +8,7 @@ import { destinationRouter } from "@/server/api/routers/destination";
 import { expenseRouter } from "@/server/api/routers/expense";
 import { invitationRouter } from "@/server/api/routers/invitation";
 import { monthRouter } from "@/server/api/routers/month";
+import { statisticsRouter } from "@/server/api/routers/statistics";
 
 export const appRouter = createTRPCRouter({
   budgie: budgieRouter,
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   destination: destinationRouter,
   category: categoryRouter,
   invitation: invitationRouter,
+  statistics: statisticsRouter,
 });
 
 export type AppRouter = typeof appRouter;

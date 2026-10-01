@@ -10,6 +10,7 @@ import { EmailService } from "./email.service";
 import { ExpenseService } from "./expense.service";
 import { InvitationService } from "./invitation.service";
 import { MonthService } from "./month.service";
+import { StatisticsService } from "./statistics.service";
 import { UserService } from "./user.service";
 
 export function createServices(db: PrismaClient) {
@@ -25,6 +26,7 @@ export function createServices(db: PrismaClient) {
     contribution: new ContributionService(db),
     destination: new DestinationService(db),
     category: new CategoryService(db),
+    statistics: new StatisticsService(db),
     user,
     invitation: new InvitationService(db, user),
     emailContent,
@@ -45,4 +47,5 @@ export { EmailService } from "./email.service";
 export { ExpenseService } from "./expense.service";
 export { InvitationService } from "./invitation.service";
 export { MonthService } from "./month.service";
+export { StatisticsService } from "./statistics.service";
 export { UserService } from "./user.service";
